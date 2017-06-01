@@ -1,0 +1,7 @@
+
+bridge:
+  build: .
+  restart: always
+  privileged: true 
+  ports:
+    - '443:443'
