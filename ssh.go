@@ -75,6 +75,9 @@ func BridgeSSH(cli0 *ssh.Client, addrs ...string) (cli *ssh.Client, err error) {
 	// 协议验证
 	config := &ssh.ClientConfig{
 		User: user,
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
+		},
 	}
 	if isPwd {
 		config.Auth = []ssh.AuthMethod{ssh.Password(pwd)}
