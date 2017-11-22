@@ -5,8 +5,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/wzshiming/ffmt"
-
 	"golang.org/x/crypto/ssh"
 )
 
@@ -17,7 +15,7 @@ func RegisterBridge(br string, dials ...string) error {
 		bridgeDial = map[string]func(n, addr string) (net.Conn, error){}
 	}
 
-	ffmt.Mark(dials)
+	// ffmt.Mark(dials)
 	cli, err := BridgeSSH(nil, dials...)
 	if err != nil {
 		return err
