@@ -1,8 +1,10 @@
 package ssdb
 
 import (
+	"net"
+
 	"github.com/wzshiming/bridge"
-	ssdb "github.com/wzshiming/gossdb"
+	ssdb "github.com/wzshiming/ssdb"
 )
 
 // OpenSSDB 创建 ssdb 连接
@@ -17,11 +19,8 @@ func OpenSSDB(addr string, bridges ...string) (*ssdb.Client, error) {
 		return nil, err
 	}
 
-	conn, err := sshcli.Dial("tcp", addr)
-	if err != nil {
-		return nil, err
-	}
-
 	// ssdb 连接
-	return ssdb.ConnectByConn(conn)
+	return ssdb.Connect(func() (net.Conn, error) {
+		return sshcli.Dial("tcp", addr)
+	})
 }
