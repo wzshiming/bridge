@@ -9,18 +9,21 @@ import (
 
 // OpenSSDB 创建 ssdb 连接
 func OpenSSDB(addr string, bridges ...string) (*ssdb.Client, error) {
+	opts := []ssdb.Option{}
+	opts = append(opts, ssdb.Addr(addr))
 	if len(bridges) == 0 {
-		return ssdb.ConnectByAddr(addr)
+		return ssdb.Connect(opts...)
 	}
 
-	// 建立代理
-	sshcli, err := bridge.BridgeSSH(nil, bridges...)
-	if err != nil {
-		return nil, err
-	}
+	opts = append(opts, ssdb.DialHandler(func(addr string) (net.Conn, error) {
+		// 建立代理
+		sshcli, err := bridge.BridgeSSH(nil, bridges...)
+		if err != nil {
+			return nil, err
+		}
+		return sshcli.Dial("tcp", addr)
+	}))
 
 	// ssdb 连接
-	return ssdb.Connect(func() (net.Conn, error) {
-		return sshcli.Dial("tcp", addr)
-	})
+	return ssdb.Connect(opts...)
 }
