@@ -10,7 +10,7 @@ import (
 // OpenSSDB 创建 ssdb 连接
 func OpenSSDB(addr string, bridges ...string) (*ssdb.Client, error) {
 	opts := []ssdb.Option{}
-	opts = append(opts, ssdb.Url(addr))
+	opts = append(opts, ssdb.URL(addr))
 
 	if len(bridges) == 0 {
 		return ssdb.Connect(opts...)
