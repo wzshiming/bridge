@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// SSH ssh://[username:password@]{address}
+// SSH ssh://[username:password@]{address}[?identity_file=path/to/file]
 func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 
 	ur, err := url.Parse(addr)
@@ -44,20 +44,23 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	}
 
 	if isPwd {
-		config.Auth = []ssh.AuthMethod{ssh.Password(pwd)}
-	} else {
-		file, err := ioutil.ReadFile("~/.ssh/id_rsa")
-		if err == nil {
-			_, keyByte := pem.Decode(file)
-			key, err := x509.ParsePKCS8PrivateKey(keyByte)
-			if err != nil {
-				return nil, err
+		config.Auth = append(config.Auth, ssh.Password(pwd))
+	}
+	for _, ident := range ur.Query()["identity_file"] {
+		if ident != "" {
+			file, err := ioutil.ReadFile(ident)
+			if err == nil {
+				_, keyByte := pem.Decode(file)
+				key, err := x509.ParsePKCS8PrivateKey(keyByte)
+				if err != nil {
+					return nil, err
+				}
+				signer, err := ssh.NewSignerFromKey(key)
+				if err != nil {
+					return nil, err
+				}
+				config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 			}
-			signer, err := ssh.NewSignerFromKey(key)
-			if err != nil {
-				return nil, err
-			}
-			config.Auth = []ssh.AuthMethod{ssh.PublicKeys(signer)}
 		}
 	}
 
