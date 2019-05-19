@@ -3,9 +3,13 @@ package ssh
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/wzshiming/bridge"
 	"golang.org/x/crypto/ssh"
@@ -13,7 +17,6 @@ import (
 
 // SSH ssh://[username:password@]{address}[?identity_file=path/to/file]
 func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
-
 	ur, err := url.Parse(addr)
 	if err != nil {
 		return nil, err
@@ -26,15 +29,12 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 		user = ur.User.Username()
 		pwd, isPwd = ur.User.Password()
 	}
-	host := ur.Host
-
-	if dialer == nil {
-		dialer = bridge.DialFunc(net.Dial)
+	host := ur.Hostname()
+	port := ur.Port()
+	if port == "" {
+		port = "22"
 	}
-	conn, err := dialer.Dial("tcp", host)
-	if err != nil {
-		return nil, err
-	}
+	host += ":" + port
 
 	config := &ssh.ClientConfig{
 		User: user,
@@ -46,12 +46,18 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if isPwd {
 		config.Auth = append(config.Auth, ssh.Password(pwd))
 	}
+
 	for _, ident := range ur.Query()["identity_file"] {
 		if ident != "" {
+			if strings.HasPrefix(ident, "~") {
+				home, err := os.UserHomeDir()
+				if err == nil {
+					ident = filepath.Join(home, ident[1:])
+				}
+			}
 			file, err := ioutil.ReadFile(ident)
 			if err == nil {
-				_, keyByte := pem.Decode(file)
-				key, err := x509.ParsePKCS8PrivateKey(keyByte)
+				key, err := parsePrivateKey(file)
 				if err != nil {
 					return nil, err
 				}
@@ -64,10 +70,34 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 		}
 	}
 
+	if dialer == nil {
+		dialer = bridge.DialFunc(net.Dial)
+	}
+	conn, err := dialer.Dial("tcp", host)
+	if err != nil {
+		return nil, err
+	}
+
 	c, chans, reqs, err := ssh.NewClientConn(conn, host, config)
 	if err != nil {
 		return nil, err
 	}
 
 	return ssh.NewClient(c, chans, reqs), nil
+}
+
+func parsePrivateKey(privKey []byte) (interface{}, error) {
+	var block, _ = pem.Decode(privKey)
+	if block == nil {
+		return nil, errors.New("Is not a valid private key")
+	}
+	var priv, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		var priv, err = x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		return priv, nil
+	}
+	return priv, nil
 }
