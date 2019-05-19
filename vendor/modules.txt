@@ -1,3 +1,7 @@
+# github.com/wzshiming/httpconnect v0.0.0-20190518181416-06de63fca88b
+github.com/wzshiming/httpconnect
+# github.com/wzshiming/socks v0.0.0-20190519154808-09d95c65b226
+github.com/wzshiming/socks
 # golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
 golang.org/x/crypto/ssh
 golang.org/x/crypto/curve25519
@@ -6,9 +10,6 @@ golang.org/x/crypto/internal/chacha20
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ed25519/internal/edwards25519
 golang.org/x/crypto/internal/subtle
-# golang.org/x/net v0.0.0-20190514140710-3ec191127204
-golang.org/x/net/proxy
-golang.org/x/net/internal/socks
 # golang.org/x/sys v0.0.0-20190412213103-97732733099d
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
