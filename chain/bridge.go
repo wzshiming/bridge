@@ -1,18 +1,20 @@
-package bridge
+package chain
 
 import (
 	"errors"
 	"net/url"
 	"strings"
+
+	"github.com/wzshiming/bridge"
 )
 
-type BridgeChain map[string]Bridger
+type BridgeChain map[string]bridge.Bridger
 
-func (b BridgeChain) Bridge(dialer Dialer, addr string) (Dialer, error) {
+func (b BridgeChain) Bridge(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	return b.BridgeChain(dialer, strings.Split(addr, ">")...)
 }
 
-func (b BridgeChain) BridgeChain(dialer Dialer, addrs ...string) (Dialer, error) {
+func (b BridgeChain) BridgeChain(dialer bridge.Dialer, addrs ...string) (bridge.Dialer, error) {
 	if len(addrs) == 0 {
 		return dialer, nil
 	}
@@ -24,7 +26,7 @@ func (b BridgeChain) BridgeChain(dialer Dialer, addrs ...string) (Dialer, error)
 	return b.BridgeChain(d, addrs[1:]...)
 }
 
-func (b BridgeChain) bridge(dialer Dialer, addr string) (Dialer, error) {
+func (b BridgeChain) bridge(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	ur, err := url.Parse(addr)
 	if err != nil {
 		return nil, err
