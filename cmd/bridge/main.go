@@ -43,14 +43,10 @@ func main() {
 	}
 
 	if addres == "" {
-		conn, err := dial("tcp", target)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
-			return
-		}
-
-		go io.Copy(conn, os.Stdin)
-		io.Copy(os.Stdout, conn)
+		connect(struct {
+			io.Reader
+			io.Writer
+		}{os.Stdin, os.Stdout}, dial, target)
 	} else {
 		listener, err := net.Listen("tcp", addres)
 		if err != nil {
@@ -63,17 +59,18 @@ func main() {
 				fmt.Fprintln(os.Stderr, err.Error())
 				return
 			}
-
-			go func() {
-				conn, err := dial("tcp", target)
-				if err != nil {
-					fmt.Fprintln(os.Stderr, err.Error())
-					return
-				}
-
-				go io.Copy(conn, raw)
-				io.Copy(raw, conn)
-			}()
+			go connect(raw, dial, target)
 		}
 	}
+}
+
+func connect(raw io.ReadWriter, dial func(network, address string) (net.Conn, error), target string) {
+	conn, err := dial("tcp", target)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return
+	}
+
+	go io.Copy(conn, raw)
+	io.Copy(raw, conn)
 }
