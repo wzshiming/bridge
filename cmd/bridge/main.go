@@ -12,24 +12,24 @@ import (
 
 var addres string
 
+const defaults = `usage: bridge [-a [bind_address]:bind_port] proxy_address:proxy_port
+              [(socks5|socks4|socks4a|https|http||ssh)://bridge_address:bridge_port ..]
+`
+
 func init() {
 	flag.StringVar(&addres, "a", "", "pipe or tcp address, the default is pipe")
+	flag.Parse()
 }
 
 func main() {
-	flag.Parse()
 	args := flag.Args()
 	if len(args) < 1 {
-		fmt.Fprintf(os.Stderr,
-			`usage: bridge [-a address[:port]] [(socks5|ssh)://address:port ..]
-`,
-		)
+		fmt.Fprintf(os.Stderr, defaults)
 		flag.PrintDefaults()
 		return
 	}
 
 	dial := net.Dial
-
 	target := args[0]
 
 	args = args[1:]
