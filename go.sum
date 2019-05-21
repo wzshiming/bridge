@@ -1,5 +1,5 @@
-github.com/wzshiming/httpconnect v0.0.0-20190518181416-06de63fca88b h1:mtyimDVZMso4aTCxL2fBDcC/j2phBb3PSfX8HsPL1Bg=
-github.com/wzshiming/httpconnect v0.0.0-20190518181416-06de63fca88b/go.mod h1:zIcNRIilfs214Ouz0RJUYSO50zfnEPcJBwVv7eYtTWY=
+github.com/wzshiming/httpproxy v0.0.0-20190521103757-b9fc893303ad h1:pBmZ4CPk0AVR3q8EG3zBPuVsU8o2pE/nO7zCmfacY2c=
+github.com/wzshiming/httpproxy v0.0.0-20190521103757-b9fc893303ad/go.mod h1:mWc6Q7t8k5jpqQZKS+kz6U8+c+GlBBcybU65p649Fy8=
 github.com/wzshiming/socks v0.0.0-20190519154808-09d95c65b226 h1:HhCcq/zmkTauI0OxL87WV1TGvaJ5zE2XUfVva+wYk18=
 github.com/wzshiming/socks v0.0.0-20190519154808-09d95c65b226/go.mod h1:6aoyqNufS+lHqUy1lgVcJnd913eD1Nf7qrFXJEXW1hE=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
