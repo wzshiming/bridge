@@ -1,21 +1,22 @@
 package bridge
 
 import (
+	"context"
 	"net"
 )
 
 type Dialer interface {
-	Dial(network, addr string) (c net.Conn, err error)
+	DialContext(ctx context.Context, network, addr string) (c net.Conn, err error)
 }
 
 type Bridger interface {
 	Bridge(dialer Dialer, addr string) (Dialer, error)
 }
 
-type DialFunc func(network, addr string) (c net.Conn, err error)
+type DialFunc func(ctx context.Context, network, addr string) (c net.Conn, err error)
 
-func (b DialFunc) Dial(network, addr string) (c net.Conn, err error) {
-	return b(network, addr)
+func (b DialFunc) DialContext(ctx context.Context, network, addr string) (c net.Conn, err error) {
+	return b(ctx, network, addr)
 }
 
 type BridgeFunc func(dialer Dialer, addr string) (Dialer, error)

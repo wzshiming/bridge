@@ -1,9 +1,6 @@
 package socks
 
 import (
-	"context"
-	"net"
-
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/socks"
 )
@@ -16,9 +13,7 @@ func SOCKS(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	}
 
 	if dialer != nil {
-		d.ProxyDial = func(ctx context.Context, network string, address string) (net.Conn, error) {
-			return dialer.Dial(network, address)
-		}
+		d.ProxyDial = dialer.DialContext
 	}
 	return d, nil
 }

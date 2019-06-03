@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"net"
 	"os"
 
+	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
 )
 
@@ -29,7 +31,8 @@ func main() {
 		return
 	}
 
-	dial := net.Dial
+	var bri bridge.Dialer
+
 	target := args[0]
 
 	args = args[1:]
@@ -39,14 +42,14 @@ func main() {
 			fmt.Fprintln(os.Stderr, err.Error())
 			return
 		}
-		dial = d.Dial
+		bri = d
 	}
 
 	if addres == "" {
-		connect(struct {
+		connect(context.Background(), struct {
 			io.Reader
 			io.Writer
-		}{os.Stdin, os.Stdout}, dial, target)
+		}{os.Stdin, os.Stdout}, bri, target)
 	} else {
 		listener, err := net.Listen("tcp", addres)
 		if err != nil {
@@ -59,13 +62,14 @@ func main() {
 				fmt.Fprintln(os.Stderr, err.Error())
 				return
 			}
-			go connect(raw, dial, target)
+
+			go connect(context.Background(), raw, bri, target)
 		}
 	}
 }
 
-func connect(raw io.ReadWriter, dial func(network, address string) (net.Conn, error), target string) {
-	conn, err := dial("tcp", target)
+func connect(ctx context.Context, raw io.ReadWriter, bri bridge.Dialer, target string) {
+	conn, err := bri.DialContext(ctx, "tcp", target)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return

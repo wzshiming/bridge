@@ -1,9 +1,6 @@
 package connect
 
 import (
-	"context"
-	"net"
-
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/httpproxy"
 )
@@ -15,9 +12,7 @@ func CONNECT(dialer bridge.Dialer, address string) (bridge.Dialer, error) {
 		return nil, err
 	}
 	if dialer != nil {
-		d.ProxyDial = func(ctx context.Context, network string, address string) (net.Conn, error) {
-			return dialer.Dial(network, address)
-		}
+		d.ProxyDial = dialer.DialContext
 	}
 	return d, nil
 }

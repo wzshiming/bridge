@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -71,19 +72,25 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	}
 
 	if dialer == nil {
-		dialer = bridge.DialFunc(net.Dial)
-	}
-	conn, err := dialer.Dial("tcp", host)
-	if err != nil {
-		return nil, err
+		var d net.Dialer
+		dialer = bridge.DialFunc(d.DialContext)
 	}
 
-	c, chans, reqs, err := ssh.NewClientConn(conn, host, config)
-	if err != nil {
-		return nil, err
-	}
+	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
+		conn, err := dialer.DialContext(ctx, "tcp", host)
+		if err != nil {
+			return nil, err
+		}
 
-	return ssh.NewClient(c, chans, reqs), nil
+		con, chans, reqs, err := ssh.NewClientConn(conn, host, config)
+		if err != nil {
+			return nil, err
+		}
+
+		cli := ssh.NewClient(con, chans, reqs)
+		return cli.Dial(network, addr)
+	}), nil
+
 }
 
 func parsePrivateKey(privKey []byte) (interface{}, error) {
