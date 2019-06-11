@@ -1,22 +1,29 @@
 package httpproxy
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 )
 
-func proxyOther(w http.ResponseWriter, r *http.Request) {
+func (p *ProxyHandler) proxyOther(w http.ResponseWriter, r *http.Request) {
 	r.RequestURI = ""
 	cli := http.Client{}
+	if p.ProxyDial != nil {
+		tran := &http.Transport{
+			DialContext: p.ProxyDial,
+		}
+		cli.Transport = tran
+	}
 	resp, err := cli.Do(r)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 	defer resp.Body.Close()
-	for k, _ := range resp.Header {
+	for k := range resp.Header {
 		w.Header().Set(k, resp.Header.Get(k))
 	}
 	w.WriteHeader(resp.StatusCode)
@@ -24,7 +31,7 @@ func proxyOther(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func proxyConnect(w http.ResponseWriter, r *http.Request) {
+func (p *ProxyHandler) proxyConnect(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
@@ -37,7 +44,12 @@ func proxyConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetConn, err := net.Dial("tcp", r.URL.Host)
+	var targetConn net.Conn
+	if p.ProxyDial != nil {
+		targetConn, err = p.ProxyDial(r.Context(), "tcp", r.URL.Host)
+	} else {
+		targetConn, err = net.Dial("tcp", r.URL.Host)
+	}
 	if err != nil {
 		http.Error(w, fmt.Sprintf("net.Dial(%q) failed: %v", r.URL.Host, err), 500)
 		return
@@ -56,18 +68,19 @@ func proxyConnect(w http.ResponseWriter, r *http.Request) {
 
 // ProxyHandler proxy handler
 type ProxyHandler struct {
-	Pass func(http.ResponseWriter, *http.Request) bool
+	ProxyDial      func(context.Context, string, string) (net.Conn, error)
+	Authentication Authentication
 }
 
 func (p *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if p.Pass != nil && !p.Pass(w, r) {
+	if p.Authentication != nil && !p.Authentication.Auth(w, r) {
 		return
 	}
 	handle := http.NotFound
 	if r.Method == "CONNECT" {
-		handle = proxyConnect
+		handle = p.proxyConnect
 	} else if r.URL.Host != "" {
-		handle = proxyOther
+		handle = p.proxyOther
 	}
 	handle(w, r)
 }
