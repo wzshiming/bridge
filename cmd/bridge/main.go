@@ -34,7 +34,7 @@ func main() {
 		return
 	}
 
-	var bri bridge.Dialer
+	var bri bridge.Dialer = &net.Dialer{}
 
 	target := args[0]
 
