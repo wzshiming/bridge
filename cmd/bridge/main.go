@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
@@ -50,7 +51,7 @@ func main() {
 
 	var dumper io.Writer
 	if dump {
-		dumper = hex.Dumper(os.Stderr)
+		dumper = &syncWriter{w: hex.Dumper(os.Stderr)}
 	}
 	if addres == "" {
 		connect(context.Background(), struct {
@@ -89,4 +90,16 @@ func connect(ctx context.Context, raw io.ReadWriter, bri bridge.Dialer, target s
 		go io.Copy(conn, raw)
 		io.Copy(raw, conn)
 	}
+}
+
+// The asynchronous output is locked only for debug with no performance considerations
+type syncWriter struct {
+	w io.Writer
+	sync.Mutex
+}
+
+func (s *syncWriter) Write(p []byte) (n int, err error) {
+	s.Lock()
+	defer s.Unlock()
+	return s.w.Write(p)
 }
