@@ -14,7 +14,7 @@ import (
 )
 
 var addres string
-var dumper bool
+var dump bool
 
 const defaults = `usage: bridge [-d] [-a [bind_address]:bind_port] proxy_address:proxy_port
               [(socks5|socks4|socks4a|https|http||ssh)://bridge_address:bridge_port ..]
@@ -22,7 +22,7 @@ const defaults = `usage: bridge [-d] [-a [bind_address]:bind_port] proxy_address
 
 func init() {
 	flag.StringVar(&addres, "a", "", "Pipe or tcp address, the default is pipe")
-	flag.BoolVar(&dumper, "d", false, "Output the communication data")
+	flag.BoolVar(&dump, "d", false, "Output the communication data")
 	flag.Parse()
 }
 
@@ -48,6 +48,10 @@ func main() {
 		bri = d
 	}
 
+	var dumper io.Writer
+	if dump {
+		dumper = hex.Dumper(os.Stderr)
+	}
 	if addres == "" {
 		connect(context.Background(), struct {
 			io.Reader
@@ -71,17 +75,16 @@ func main() {
 	}
 }
 
-func connect(ctx context.Context, raw io.ReadWriter, bri bridge.Dialer, target string, dumper bool) {
+func connect(ctx context.Context, raw io.ReadWriter, bri bridge.Dialer, target string, dumper io.Writer) {
 	conn, err := bri.DialContext(ctx, "tcp", target)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
 	}
 
-	if dumper {
-		dump := hex.Dumper(os.Stderr)
-		go io.Copy(conn, io.TeeReader(raw, dump))
-		io.Copy(raw, io.TeeReader(conn, dump))
+	if dumper != nil {
+		go io.Copy(conn, io.TeeReader(raw, dumper))
+		io.Copy(raw, io.TeeReader(conn, dumper))
 	} else {
 		go io.Copy(conn, raw)
 		io.Copy(raw, conn)
