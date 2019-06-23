@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"sync"
@@ -55,9 +56,9 @@ func main() {
 	}
 	if addres == "" {
 		connect(context.Background(), struct {
-			io.Reader
+			io.ReadCloser
 			io.Writer
-		}{os.Stdin, os.Stdout}, bri, target, dumper)
+		}{ioutil.NopCloser(os.Stdin), os.Stdout}, bri, target, dumper)
 	} else {
 		listener, err := net.Listen("tcp", addres)
 		if err != nil {
@@ -76,13 +77,14 @@ func main() {
 	}
 }
 
-func connect(ctx context.Context, raw io.ReadWriter, bri bridge.Dialer, target string, dumper io.Writer) {
+func connect(ctx context.Context, raw io.ReadWriteCloser, bri bridge.Dialer, target string, dumper io.Writer) {
 	conn, err := bri.DialContext(ctx, "tcp", target)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
 	}
-
+	defer raw.Close()
+	defer conn.Close()
 	if dumper != nil {
 		go io.Copy(conn, io.TeeReader(raw, dumper))
 		io.Copy(raw, io.TeeReader(conn, dumper))
