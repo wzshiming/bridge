@@ -85,11 +85,7 @@ func (d *Dialer) proxyDial(ctx context.Context, network string, address string) 
 
 // DialContext connects to the provided address on the provided network.
 func (d *Dialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
-	if network != "tcp" {
-		return nil, fmt.Errorf("network '%v' unsupported", network)
-	}
-
-	conn, err := d.proxyDial(ctx, "tcp", d.proxy)
+	conn, err := d.proxyDial(ctx, network, d.proxy)
 	if err != nil {
 		return nil, err
 	}
