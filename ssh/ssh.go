@@ -77,7 +77,7 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	}
 
 	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
-		conn, err := dialer.DialContext(ctx, "tcp", host)
+		conn, err := dialer.DialContext(ctx, network, host)
 		if err != nil {
 			return nil, err
 		}
