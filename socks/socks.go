@@ -6,14 +6,14 @@ import (
 )
 
 // SOCKS socks5://[username:password@]{address}
-func SOCKS(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
+func SOCKS(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
 	d, err := socks.NewDialer(addr)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if dialer != nil {
 		d.ProxyDial = dialer.DialContext
 	}
-	return d, nil
+	return d, nil, nil
 }

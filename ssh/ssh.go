@@ -17,10 +17,49 @@ import (
 )
 
 // SSH ssh://[username:password@]{address}[?identity_file=path/to/file]
-func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
+func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
+	if dialer == nil {
+		var d net.Dialer
+		dialer = bridge.DialFunc(d.DialContext)
+	}
+	host, config, err := config(addr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
+			conn, err := dialer.DialContext(ctx, network, host)
+			if err != nil {
+				return nil, err
+			}
+
+			con, chans, reqs, err := ssh.NewClientConn(conn, host, config)
+			if err != nil {
+				return nil, err
+			}
+
+			cli := ssh.NewClient(con, chans, reqs)
+			return cli.Dial(network, addr)
+		}), bridge.ListenConfigFunc(func(ctx context.Context, network, addr string) (net.Listener, error) {
+			conn, err := dialer.DialContext(ctx, network, host)
+			if err != nil {
+				return nil, err
+			}
+
+			con, chans, reqs, err := ssh.NewClientConn(conn, host, config)
+			if err != nil {
+				return nil, err
+			}
+
+			cli := ssh.NewClient(con, chans, reqs)
+			return cli.Listen(network, addr)
+		}), nil
+}
+
+func config(addr string) (host string, config *ssh.ClientConfig, err error) {
 	ur, err := url.Parse(addr)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	user := ""
@@ -30,14 +69,14 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 		user = ur.User.Username()
 		pwd, isPwd = ur.User.Password()
 	}
-	host := ur.Hostname()
+	host = ur.Hostname()
 	port := ur.Port()
 	if port == "" {
 		port = "22"
 	}
 	host += ":" + port
 
-	config := &ssh.ClientConfig{
+	config = &ssh.ClientConfig{
 		User: user,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
@@ -48,7 +87,8 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 		config.Auth = append(config.Auth, ssh.Password(pwd))
 	}
 
-	for _, ident := range ur.Query()["identity_file"] {
+	identityFiles := ur.Query()["identity_file"]
+	for _, ident := range identityFiles {
 		if ident != "" {
 			if strings.HasPrefix(ident, "~") {
 				home, err := os.UserHomeDir()
@@ -60,37 +100,17 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 			if err == nil {
 				key, err := parsePrivateKey(file)
 				if err != nil {
-					return nil, err
+					return "", nil, err
 				}
 				signer, err := ssh.NewSignerFromKey(key)
 				if err != nil {
-					return nil, err
+					return "", nil, err
 				}
 				config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 			}
 		}
 	}
-
-	if dialer == nil {
-		var d net.Dialer
-		dialer = bridge.DialFunc(d.DialContext)
-	}
-
-	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
-		conn, err := dialer.DialContext(ctx, network, host)
-		if err != nil {
-			return nil, err
-		}
-
-		con, chans, reqs, err := ssh.NewClientConn(conn, host, config)
-		if err != nil {
-			return nil, err
-		}
-
-		cli := ssh.NewClient(con, chans, reqs)
-		return cli.Dial(network, addr)
-	}), nil
-
+	return host, config, nil
 }
 
 func parsePrivateKey(privKey []byte) (interface{}, error) {
