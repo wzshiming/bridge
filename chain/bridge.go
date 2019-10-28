@@ -11,19 +11,19 @@ import (
 type BridgeChain map[string]bridge.Bridger
 
 func (b BridgeChain) Bridge(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
-	return b.BridgeChain(dialer, strings.Split(addr, ">")...)
+	return b.BridgeChain(dialer, strings.Split(addr, "<")...)
 }
 
 func (b BridgeChain) BridgeChain(dialer bridge.Dialer, addrs ...string) (bridge.Dialer, bridge.ListenConfig, error) {
 	if len(addrs) == 0 {
 		return dialer, nil, nil
 	}
-	addr := addrs[0]
+	addr := addrs[len(addrs)-1]
 	d, l, err := b.bridge(dialer, addr)
 	if err != nil {
 		return nil, nil, err
 	}
-	addrs = addrs[1:]
+	addrs = addrs[:len(addrs)-1]
 	if len(addrs) == 0 {
 		return d, l, nil
 	}

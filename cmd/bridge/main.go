@@ -24,7 +24,7 @@ var (
 const defaults = `usage: 
 	bridge [-d] \
 	[-b=[bind_address]:bind_port \
-	[[-b=(socks5|socks4|socks4a|https|http|ssh)://bridge_bind_address:bridge_bind_port ...] -b=ssh://bridge_bind_address:bridge_bind_port]]] \ // 
+	[-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks5|socks4|socks4a|https|http|ssh)://bridge_bind_address:bridge_bind_port ...]]] \ // 
 	-p=proxy_address:proxy_port \
 	[-p=(socks5|socks4|socks4a|https|http|ssh)://bridge_proxy_address:bridge_proxy_port ...]
 `
