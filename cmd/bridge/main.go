@@ -66,7 +66,7 @@ func main() {
 
 	listen := ""
 	if len(listens) != 0 {
-		listen = listens[0]
+		listen = resolveAddr(listens[0])
 		listens = listens[1:]
 		if len(listens) != 0 {
 			_, l, err := chain.Default.BridgeChain(nil, listens...)
@@ -132,4 +132,16 @@ func (s *syncWriter) Write(p []byte) (n int, err error) {
 	s.Lock()
 	defer s.Unlock()
 	return s.w.Write(p)
+}
+
+func resolveAddr(addr string) string {
+	a, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return addr
+	}
+	if len(a.IP) == 0 {
+		a.IP = net.IP{0, 0, 0, 0}
+		return a.String()
+	}
+	return addr
 }
