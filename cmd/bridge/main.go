@@ -21,7 +21,7 @@ var (
 	dump    bool
 )
 
-const defaults = `Bridge is a TCP proxy tool Support HTTP/HTTPS(HTTP-connect) socks5 socks4 socks4a ssh
+const defaults = `Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5 ssh
 More information, please go to https://github.com/wzshiming/bridge
 
 Usage: bridge [-d] \

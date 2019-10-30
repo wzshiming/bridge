@@ -1,6 +1,6 @@
 # Bridge
 
-Bridge is a TCP proxy tool Support HTTP/HTTPS(HTTP-connect) socks5 socks4 socks4a ssh
+Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5 ssh
 
 [![Build Status](https://travis-ci.org/wzshiming/bridge.svg?branch=master)](https://travis-ci.org/wzshiming/bridge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/bridge)](https://goreportcard.com/report/github.com/wzshiming/bridge)

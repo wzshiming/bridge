@@ -1,6 +1,6 @@
 # Bridge
 
-Bridge 是一个支持http/https（http connect）socks5 socks4 socks4a ssh的tcp代理工具
+Bridge 是一个支持 http(s)-connect socks4/4a/5 ssh 的tcp代理工具
 
 [![Build Status](https://travis-ci.org/wzshiming/bridge.svg?branch=master)](https://travis-ci.org/wzshiming/bridge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/bridge)](https://goreportcard.com/report/github.com/wzshiming/bridge)
