@@ -45,6 +45,13 @@ and then reload sshd.
 bridge -b :8080 -b ssh://username:password@my_server:22 -p 127.0.0.1:80
 ```
 
+More of the time I'm acting as an ssh proxy  
+in ~/.ssh/config  
+
+``` text
+ProxyCommand bridge -p %h:%p -p "ssh://username@my_server?identity_file=~/.ssh/id_rsa"
+```
+
 ## Usage
 
 ``` text

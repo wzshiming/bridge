@@ -43,6 +43,13 @@ bridge -b :8080 -p github.io:80 -p http://username:password@my_server2:8080 -p h
 bridge -b :8080 -b ssh://username:password@my_server:22 -p 127.0.0.1:80
 ```
 
+更多的时候我是用作 ssh 代理的  
+在 ~/.ssh/config  
+
+``` text
+ProxyCommand bridge -p %h:%p -p "ssh://username@my_server?identity_file=~/.ssh/id_rsa"
+```
+
 ## 用法
 
 ``` text
