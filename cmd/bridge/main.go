@@ -30,7 +30,7 @@ const defaults = `usage:
 `
 
 func init() {
-	flag.StringSliceVarP(&listens, "bind", "b", nil, "The first is the listening address, followed by the proxy through which the listening address passes, which by default redirects to the pipe. currently only ssh supports listening so the last proxy must be ssh.")
+	flag.StringSliceVarP(&listens, "bind", "b", nil, "The first is the listening address, and then the proxy through which the listening address passes.\nIf it is not filled in, it is redirected to the pipeline.\nonly ssh and local support listening, so the last proxy must be ssh.")
 	flag.StringSliceVarP(&dials, "proxy", "p", nil, "The first is the dial-up address, followed by the proxy through which the dial-up address passes.")
 	flag.BoolVarP(&dump, "debug", "d", false, "Output the communication data.")
 	flag.Parse()

@@ -1,6 +1,6 @@
 # Bridge
 
-Bridge is a TCP proxy tool Support HTTP/HTTPS(HTTP-connect) socks5 socks4 socks4a ssh
+Bridge 是一个支持http/https（http connect）socks5 socks4 socks4a ssh的tcp代理工具
 
 [![Build Status](https://travis-ci.org/wzshiming/bridge.svg?branch=master)](https://travis-ci.org/wzshiming/bridge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/bridge)](https://goreportcard.com/report/github.com/wzshiming/bridge)
@@ -10,16 +10,16 @@ Bridge is a TCP proxy tool Support HTTP/HTTPS(HTTP-connect) socks5 socks4 socks4
 - [English](https://github.com/wzshiming/bridge/blob/master/README.md)
 - [简体中文](https://github.com/wzshiming/bridge/blob/master/README_cn.md)
 
-## Example
+## 示例
 
-Mapping github.io: 80 TCP port to 8080 port of the local machine  
-access using IP will return 404 pages.  
+映射 github.io:80 tcp 端口到本机的 8080 端口  
+由于是使用 ip 访问的 访问会返回 404 页面  
 
 ``` shell
 bridge -b :8080 -p github.io:80
 ```
 
-Proxy that can go through various protocols  
+可以经过各种协议的代理  
 
 ``` shell
 bridge -b :8080 -p github.io:80 -p ssh://username:password@my_server:22
@@ -28,24 +28,22 @@ bridge -b :8080 -p github.io:80 -p socks5://username:password@my_server:1080
 bridge -b :8080 -p github.io:80 -p http://username:password@my_server:8080
 ```
 
-It can also go through multi-level proxy  
+也可以经过多级代理  
 
 ``` shell
 bridge -b :8080 -p github.io:80 -p http://username:password@my_server2:8080 -p http://username:password@my_server1:8080
 
 ```
 
-You can also use ssh to listen for port mapping from local port to server port,  
-due to the limitation of sshd, only 127.0.0.1 ports can be monitored.  
-if you want to provide external services,  
-you need to change the gatewayports no in /etc/ssh/ sshd_config to yes  
-and then reload sshd.  
+也可以通过 ssh 监听端口 本地的端口映射到服务器的端口  
+由于 sshd 的限制只能监听 127.0.0.1 的端口  
+如果想提供对外的服务需要把 /etc/ssh/sshd_config 里的 GatewayPorts no 改成 yes 然后重新加载 sshd  
 
 ``` shell
 bridge -b :8080 -b ssh://username:password@my_server:22 -p 127.0.0.1:80
 ```
 
-## Usage
+## 用法
 
 ``` text
         bridge [-d] \
@@ -53,14 +51,14 @@ bridge -b :8080 -b ssh://username:password@my_server:22 -p 127.0.0.1:80
         [-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks5|socks4|socks4a|https|http|ssh)://bridge_bind_address:bridge_bind_port ...]]] \ //
         -p=proxy_address:proxy_port \
         [-p=(socks5|socks4|socks4a|https|http|ssh)://bridge_proxy_address:bridge_proxy_port ...]
-  -b, --bind strings    The first is the listening address, and then the proxy through which the listening address passes.
-                        If it is not filled in, it is redirected to the pipeline.
-                        only SSH and local support listening, so the last proxy must be ssh.
-  -d, --debug           Output the communication data.
-  -p, --proxy strings   The first is the dial-up address, followed by the proxy through which the dial-up address passes.
+  -b, --bind strings    第一个是侦听地址，然后是侦听地址通过的代理。
+                        如果未填写，则重定向到管道。
+                        只有ssh和本地支持监听，所以最后一个代理必须是ssh。
+  -d, --debug           输出通信数据。
+  -p, --proxy strings   第一个是拨号地址，然后是拨号地址通过的代理。
 ```
 
-## Install
+## 安装
 
 ``` shell
 go get -u -v github.com/wzshiming/bridge/cmd/bridge
@@ -70,6 +68,6 @@ or
 
 [Docker image](https://hub.docker.com/r/wzshiming/bridge)
 
-## License
+## 许可证
 
-Pouch is licensed under the MIT License. See [LICENSE](https://github.com/wzshiming/bridge/blob/master/LICENSE) for the full license text.
+软包根据MIT License。有关完整的许可证文本，请参阅[LICENSE](https://github.com/wzshiming/bridge/blob/master/LICENSE)。  
