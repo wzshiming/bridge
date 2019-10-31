@@ -79,14 +79,17 @@ func (d *Dialer) DialContext(ctx context.Context, network, address string) (net.
 
 // Dial connects to the provided address on the provided network.
 func (d *Dialer) Dial(network string, address string) (net.Conn, error) {
-	return d.DialContext(context.Background(), network, address)
+	return d.proxyDial(context.Background(), network, address)
 }
 
 func (d *Dialer) proxyDial(ctx context.Context, network string, address string) (net.Conn, error) {
-	if d.ProxyDial != nil {
-		return d.ProxyDial(ctx, network, address)
+	proxyDial := d.ProxyDial
+	if proxyDial == nil {
+		var dialer net.Dialer
+		proxyDial = dialer.DialContext
 	}
-	return net.Dial(network, address)
+
+	return proxyDial(ctx, network, address)
 }
 
 func (d *Dialer) dialSocks5(ctx context.Context, network string, address string) (conn net.Conn, err error) {

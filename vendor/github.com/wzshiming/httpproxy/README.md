@@ -11,7 +11,7 @@ HTTP proxy handler and dialer
 
 [API Documentation](https://godoc.org/github.com/wzshiming/httpproxy)
 
-[Example](https://godoc.org/github.com/wzshiming/httpproxy/cmd)
+[Example](https://github.com/wzshiming/httpproxy/blob/master/cmd/httpproxy/main.go)
 
 ## License
 

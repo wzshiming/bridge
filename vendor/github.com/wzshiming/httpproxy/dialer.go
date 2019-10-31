@@ -60,11 +60,13 @@ type Dialer struct {
 }
 
 func (d *Dialer) proxyDial(ctx context.Context, network string, address string) (net.Conn, error) {
-	if d.ProxyDial == nil {
-		return net.Dial(network, address)
+	proxyDial := d.ProxyDial
+	if proxyDial == nil {
+		var dialer net.Dialer
+		proxyDial = dialer.DialContext
 	}
 
-	rawConn, err := d.ProxyDial(ctx, network, address)
+	rawConn, err := proxyDial(ctx, network, address)
 	if err != nil {
 		return nil, err
 	}

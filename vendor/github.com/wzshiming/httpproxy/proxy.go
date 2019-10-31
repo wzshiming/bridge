@@ -10,13 +10,19 @@ import (
 
 func (p *ProxyHandler) proxyOther(w http.ResponseWriter, r *http.Request) {
 	r.RequestURI = ""
-	cli := http.Client{}
-	if p.ProxyDial != nil {
-		tran := &http.Transport{
-			DialContext: p.ProxyDial,
-		}
-		cli.Transport = tran
+
+	proxyDial := p.ProxyDial
+	if proxyDial == nil {
+		var dialer net.Dialer
+		proxyDial = dialer.DialContext
 	}
+
+	cli := http.Client{
+		Transport: &http.Transport{
+			DialContext: proxyDial,
+		},
+	}
+
 	resp, err := cli.Do(r)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -44,12 +50,13 @@ func (p *ProxyHandler) proxyConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var targetConn net.Conn
-	if p.ProxyDial != nil {
-		targetConn, err = p.ProxyDial(r.Context(), "tcp", r.URL.Host)
-	} else {
-		targetConn, err = net.Dial("tcp", r.URL.Host)
+	proxyDial := p.ProxyDial
+	if proxyDial == nil {
+		var dialer net.Dialer
+		proxyDial = dialer.DialContext
 	}
+
+	targetConn, err := proxyDial(r.Context(), "tcp", r.URL.Host)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("net.Dial(%q) failed: %v", r.URL.Host, err), 500)
 		return
