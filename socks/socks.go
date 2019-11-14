@@ -5,7 +5,7 @@ import (
 	"github.com/wzshiming/socks"
 )
 
-// SOCKS socks5://[username:password@]{address}
+// SOCKS socks4://[username:password@]{address}
 func SOCKS(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
 	d, err := socks.NewDialer(addr)
 	if err != nil {

@@ -3,6 +3,8 @@ package bridge
 import (
 	"context"
 	"net"
+
+	"golang.org/x/net/proxy"
 )
 
 type ListenConfig interface {
@@ -16,7 +18,7 @@ func (b ListenConfigFunc) Listen(ctx context.Context, network, addr string) (net
 }
 
 type Dialer interface {
-	DialContext(ctx context.Context, network, addr string) (c net.Conn, err error)
+	proxy.ContextDialer
 }
 
 type Bridger interface {
