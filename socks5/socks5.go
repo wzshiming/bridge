@@ -17,12 +17,16 @@ func SOCKS5(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConf
 	}
 
 	var auth *proxy.Auth
+	var pd proxy.Dialer
+	if dialer != nil {
+		pd = Dialer{dialer}
+	}
 	if ur.User != nil {
 		auth = &proxy.Auth{}
 		auth.User = ur.User.Username()
 		auth.Password, _ = ur.User.Password()
 	}
-	d, err := proxy.SOCKS5("tcp", ur.Host, auth, Dialer{dialer})
+	d, err := proxy.SOCKS5("tcp", ur.Host, auth, pd)
 	if err != nil {
 		return nil, nil, err
 	}
