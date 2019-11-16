@@ -1,6 +1,6 @@
 # Bridge
 
-Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5 ssh
+Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh
 
 [![Build Status](https://travis-ci.org/wzshiming/bridge.svg?branch=master)](https://travis-ci.org/wzshiming/bridge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/bridge)](https://goreportcard.com/report/github.com/wzshiming/bridge)
@@ -59,7 +59,7 @@ ProxyCommand bridge -p %h:%p -p "ssh://username@my_server?identity_file=~/.ssh/i
         [-b=[bind_address]:bind_port \
         [-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks5|socks4|socks4a|https|http|ssh)://bridge_bind_address:bridge_bind_port ...]]] \ //
         -p=proxy_address:proxy_port \
-        [-p=(socks5|socks4|socks4a|https|http|ssh)://bridge_proxy_address:bridge_proxy_port ...]
+        [-p=(socks4|socks4a|socks5|socks5h|https|http|ssh)://bridge_proxy_address:bridge_proxy_port ...]
   -b, --bind strings    The first is the listening address, and then the proxy through which the listening address passes.
                         If it is not filled in, it is redirected to the pipeline.
                         only SSH and local support listening, so the last proxy must be ssh.
