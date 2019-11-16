@@ -7,7 +7,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"net/url"
 	"os"
+	"strings"
 	"sync"
 
 	flag "github.com/spf13/pflag"
@@ -44,6 +46,8 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
+
+	showChain(dials, listens)
 
 	var (
 		bialer       bridge.Dialer       = &net.Dialer{}
@@ -146,4 +150,61 @@ func resolveAddr(addr string) string {
 		return a.String()
 	}
 	return addr
+}
+
+func showChain(dials, listens []string) {
+	dials = removeUserInfo(dials)
+	listens = reverse(removeUserInfo(listens))
+
+	if len(listens) == 0 {
+		fmt.Fprintln(os.Stderr, "Bridge: DIAL", strings.Join(dials, " <- "), "<- LOCAL <- STDIO")
+	} else {
+		fmt.Fprintln(os.Stderr, "Bridge: DIAL", strings.Join(dials, " <- "), "<- LOCAL <-", strings.Join(listens, " <- "), "LISTEN")
+	}
+	return
+}
+
+func removeUserInfo(s []string) []string {
+	s = stringsClone(s)
+	for i := 0; i != len(s); i++ {
+		u, err := url.Parse(s[i])
+		if err != nil {
+			continue
+		}
+
+		changeFlag := false
+		if u.User != nil {
+			u.User = nil
+			changeFlag = true
+		}
+		if u.ForceQuery {
+			u.ForceQuery = false
+			changeFlag = true
+		}
+		if u.RawQuery != "" {
+			u.RawQuery = ""
+			changeFlag = true
+		}
+
+		if changeFlag {
+			s[i] = u.String()
+		}
+	}
+	return s
+}
+
+func stringsClone(s []string) []string {
+	n := make([]string, len(s))
+	copy(n, s)
+	return n
+}
+
+func reverse(s []string) []string {
+	if len(s) < 2 {
+		return s
+	}
+	for i := 0; i != len(s)/2; i++ {
+		s[i], s[len(s)-1] = s[len(s)-1], s[i]
+	}
+	return s
 }
