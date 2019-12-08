@@ -15,6 +15,10 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
+	_ "github.com/wzshiming/bridge/connect"
+	_ "github.com/wzshiming/bridge/socks"
+	_ "github.com/wzshiming/bridge/socks5"
+	_ "github.com/wzshiming/bridge/ssh"
 )
 
 var (
