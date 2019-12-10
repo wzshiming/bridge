@@ -9,8 +9,10 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge"
@@ -51,17 +53,12 @@ func main() {
 		return
 	}
 
-	showChain(dials, listens)
+	fmt.Fprint(os.Stderr, showChain(dials, listens))
 
 	var (
 		bialer       bridge.Dialer       = &net.Dialer{}
 		listenConfig bridge.ListenConfig = &net.ListenConfig{}
 	)
-
-	var dumper io.Writer
-	if dump {
-		dumper = &syncWriter{w: hex.Dumper(os.Stderr)}
-	}
 
 	dial := dials[0]
 	dials = dials[1:]
@@ -96,7 +93,7 @@ func main() {
 		connect(context.Background(), struct {
 			io.ReadCloser
 			io.Writer
-		}{ioutil.NopCloser(os.Stdin), os.Stdout}, bialer, dial, dumper)
+		}{ioutil.NopCloser(os.Stdin), os.Stdout}, bialer, "STDIO", dial, dump)
 	} else {
 		listener, err := listenConfig.Listen(context.Background(), "tcp", listen)
 		if err != nil {
@@ -110,38 +107,54 @@ func main() {
 				return
 			}
 
-			go connect(context.Background(), raw, bialer, dial, dumper)
+			go connect(context.Background(), raw, bialer, raw.RemoteAddr().String(), dial, dump)
 		}
 	}
 }
 
-func connect(ctx context.Context, raw io.ReadWriteCloser, bri bridge.Dialer, target string, dumper io.Writer) {
-	conn, err := bri.DialContext(ctx, "tcp", target)
+func connect(ctx context.Context, raw io.ReadWriteCloser, bri bridge.Dialer, from string, to string, dump bool) {
+	conn, err := bri.DialContext(ctx, "tcp", to)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
 	}
 	defer raw.Close()
 	defer conn.Close()
-	if dumper != nil {
-		go io.Copy(conn, io.TeeReader(raw, dumper))
-		io.Copy(raw, io.TeeReader(conn, dumper))
+	if dump {
+		dumpRaw := &syncWriter{Prefix: fmt.Sprintf("Send:    %s -> %s", from, to)}
+		dumpConn := &syncWriter{Prefix: fmt.Sprintf("Receive: %s <- %s", from, to)}
+
+		go io.Copy(conn, io.TeeReader(raw, dumpRaw))
+		io.Copy(raw, io.TeeReader(conn, dumpConn))
 	} else {
 		go io.Copy(conn, raw)
 		io.Copy(raw, conn)
 	}
 }
 
+var mut = sync.Mutex{}
+
 // The asynchronous output is locked only for debug with no performance considerations
 type syncWriter struct {
-	w io.Writer
-	sync.Mutex
+	Prefix string
+	Count  int64
 }
 
 func (s *syncWriter) Write(p []byte) (n int, err error) {
-	s.Lock()
-	defer s.Unlock()
-	return s.w.Write(p)
+	mut.Lock()
+	defer mut.Unlock()
+	s.Count++
+	io.WriteString(os.Stderr, strconv.FormatInt(s.Count, 10))
+	io.WriteString(os.Stderr, ". ")
+	if s.Prefix != "" {
+		io.WriteString(os.Stderr, s.Prefix)
+		io.WriteString(os.Stderr, " ")
+	}
+	io.WriteString(os.Stderr, time.Now().Format(time.RFC3339Nano))
+	io.WriteString(os.Stderr, "\n")
+	w := hex.Dumper(os.Stderr)
+	defer w.Close()
+	return w.Write(p)
 }
 
 func resolveAddr(addr string) string {
@@ -156,16 +169,14 @@ func resolveAddr(addr string) string {
 	return addr
 }
 
-func showChain(dials, listens []string) {
+func showChain(dials, listens []string) string {
 	dials = removeUserInfo(dials)
 	listens = reverse(removeUserInfo(listens))
 
 	if len(listens) == 0 {
-		fmt.Fprintln(os.Stderr, "Bridge: DIAL", strings.Join(dials, " <- "), "<- LOCAL <- STDIO")
-	} else {
-		fmt.Fprintln(os.Stderr, "Bridge: DIAL", strings.Join(dials, " <- "), "<- LOCAL <-", strings.Join(listens, " <- "), "LISTEN")
+		return fmt.Sprintln("Bridge: DIAL", strings.Join(dials, " <- "), "<- LOCAL <- STDIO")
 	}
-	return
+	return fmt.Sprintln("Bridge: DIAL", strings.Join(dials, " <- "), "<- LOCAL <-", strings.Join(listens, " <- "), "LISTEN")
 }
 
 func removeUserInfo(s []string) []string {
