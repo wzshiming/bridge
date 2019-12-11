@@ -63,18 +63,23 @@ func main() {
 	dial := dials[0]
 	dials = dials[1:]
 	if len(dials) != 0 {
-		d, _, err := chain.Default.BridgeChain(nil, dials...)
+		b, _, err := chain.Default.BridgeChain(nil, dials...)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			return
 		}
-		bialer = d
+		bialer = b
 	}
 
-	listen := ""
-	if len(listens) != 0 {
-		listen = resolveAddr(listens[0])
+	if len(listens) == 0 {
+		connect(context.Background(), struct {
+			io.ReadCloser
+			io.Writer
+		}{ioutil.NopCloser(os.Stdin), os.Stdout}, bialer, "STDIO", dial, dump)
+	} else {
+		listen := resolveAddr(listens[0])
 		listens = listens[1:]
+
 		if len(listens) != 0 {
 			_, l, err := chain.Default.BridgeChain(nil, listens...)
 			if err != nil {
@@ -87,14 +92,7 @@ func main() {
 			}
 			listenConfig = l
 		}
-	}
 
-	if listen == "" {
-		connect(context.Background(), struct {
-			io.ReadCloser
-			io.Writer
-		}{ioutil.NopCloser(os.Stdin), os.Stdout}, bialer, "STDIO", dial, dump)
-	} else {
 		listener, err := listenConfig.Listen(context.Background(), "tcp", listen)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
