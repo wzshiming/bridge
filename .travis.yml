@@ -1,5 +1,23 @@
 language: go
-go:
-  - "1.12"
-  - "1.13"
-  - tip
+sudo: false
+notifications:
+  email: false
+jobs:
+  include:
+    - go: 1.13.x
+      stage: deploy
+      go_import_path: github.com/wzshiming/bridge
+      install: skip
+      script: skip
+      before_deploy:
+        - BASENAME=bridge bash -c "$(curl -fsSL https://github.com/wzshiming/my-shell/raw/master/build_all.bash)"
+      deploy:
+        provider: releases
+        api_key: $CI_TOKEN
+        file_glob: true
+        file: release/*
+        skip_cleanup: true
+        on:
+          repo: wzshiming/bridge
+          branch: master
+          tags: true
