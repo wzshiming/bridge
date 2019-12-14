@@ -5,6 +5,7 @@ Bridge 是一个支持 http(s)-connect socks4/4a/5/5h ssh 的tcp代理工具
 [![Build Status](https://travis-ci.org/wzshiming/bridge.svg?branch=master)](https://travis-ci.org/wzshiming/bridge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/bridge)](https://goreportcard.com/report/github.com/wzshiming/bridge)
 [![GoDoc](https://godoc.org/github.com/wzshiming/bridge?status.svg)](https://godoc.org/github.com/wzshiming/bridge)
+[![Docker Automated build](https://img.shields.io/docker/cloud/automated/wzshiming/bridge.svg)](https://hub.docker.com/r/wzshiming/bridge)
 [![GitHub license](https://img.shields.io/github/license/wzshiming/bridge.svg)](https://github.com/wzshiming/bridge/blob/master/LICENSE)
 
 - [English](https://github.com/wzshiming/bridge/blob/master/README.md)
