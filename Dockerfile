@@ -1,7 +1,7 @@
 FROM golang:alpine AS builder
 WORKDIR /go/src/github.com/wzshiming/bridge/
 COPY . .
-RUN go install -mod vendor ./cmd/bridge
+RUN go install ./cmd/bridge
 
 FROM wzshiming/upx AS upx
 COPY --from=builder /go/bin/ /go/bin/
