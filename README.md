@@ -76,6 +76,10 @@ go get -u -v github.com/wzshiming/bridge/cmd/bridge
 
 or
 
+[Download releases](https://github.com/wzshiming/bridge/releases)
+
+or
+
 [Docker image](https://hub.docker.com/r/wzshiming/bridge)
 
 ## License
