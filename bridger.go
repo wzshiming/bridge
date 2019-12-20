@@ -7,32 +7,41 @@ import (
 	"golang.org/x/net/proxy"
 )
 
+// ListenConfig contains options for listening to an address.
 type ListenConfig interface {
-	Listen(ctx context.Context, network, addr string) (net.Listener, error)
+	Listen(ctx context.Context, network, address string) (net.Listener, error)
 }
 
-type ListenConfigFunc func(ctx context.Context, network, addr string) (net.Listener, error)
+// ListenConfigFunc type is an adapter for ListenConfig.
+type ListenConfigFunc func(ctx context.Context, network, address string) (net.Listener, error)
 
-func (b ListenConfigFunc) Listen(ctx context.Context, network, addr string) (net.Listener, error) {
-	return b(ctx, network, addr)
+// Listen calls b(ctx, network, address)
+func (l ListenConfigFunc) Listen(ctx context.Context, network, address string) (net.Listener, error) {
+	return l(ctx, network, address)
 }
 
+// Dialer contains options for connecting to an address.
 type Dialer interface {
 	proxy.ContextDialer
 }
 
+// DialFunc type is an adapter for Dialer.
+type DialFunc func(ctx context.Context, network, address string) (c net.Conn, err error)
+
+// DialContext calls d(ctx, network, address)
+func (d DialFunc) DialContext(ctx context.Context, network, address string) (c net.Conn, err error) {
+	return d(ctx, network, address)
+}
+
+// Bridger contains options for crossing a bridge address.
 type Bridger interface {
-	Bridge(dialer Dialer, addr string) (Dialer, ListenConfig, error)
+	Bridge(dialer Dialer, address string) (Dialer, ListenConfig, error)
 }
 
-type DialFunc func(ctx context.Context, network, addr string) (c net.Conn, err error)
+// BridgeFunc type is an adapter for Bridger.
+type BridgeFunc func(dialer Dialer, address string) (Dialer, ListenConfig, error)
 
-func (b DialFunc) DialContext(ctx context.Context, network, addr string) (c net.Conn, err error) {
-	return b(ctx, network, addr)
-}
-
-type BridgeFunc func(dialer Dialer, addr string) (Dialer, ListenConfig, error)
-
-func (b BridgeFunc) Bridge(dialer Dialer, addr string) (Dialer, ListenConfig, error) {
-	return b(dialer, addr)
+// Bridge calls b(dialer, address)
+func (b BridgeFunc) Bridge(dialer Dialer, address string) (Dialer, ListenConfig, error) {
+	return b(dialer, address)
 }

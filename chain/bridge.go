@@ -3,51 +3,50 @@ package chain
 import (
 	"errors"
 	"net/url"
-	"strings"
 
 	"github.com/wzshiming/bridge"
 )
 
+// BridgeChain is a bridger that supports multiple crossing of bridger.
 type BridgeChain struct {
 	proto map[string]bridge.Bridger
 }
 
+// NewBridgeChain create a new BridgeChain.
 func NewBridgeChain() *BridgeChain {
 	return &BridgeChain{map[string]bridge.Bridger{}}
 }
 
-func (b *BridgeChain) Bridge(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
-	return b.BridgeChain(dialer, strings.Split(addr, "<")...)
-}
-
-func (b *BridgeChain) BridgeChain(dialer bridge.Dialer, addrs ...string) (bridge.Dialer, bridge.ListenConfig, error) {
-	if len(addrs) == 0 {
+// BridgeChain is multiple crossing of bridge.
+func (b *BridgeChain) BridgeChain(dialer bridge.Dialer, addresses ...string) (bridge.Dialer, bridge.ListenConfig, error) {
+	if len(addresses) == 0 {
 		return dialer, nil, nil
 	}
-	addr := addrs[len(addrs)-1]
-	d, l, err := b.bridge(dialer, addr)
+	address := addresses[len(addresses)-1]
+	d, l, err := b.bridge(dialer, address)
 	if err != nil {
 		return nil, nil, err
 	}
-	addrs = addrs[:len(addrs)-1]
-	if len(addrs) == 0 {
+	addresses = addresses[:len(addresses)-1]
+	if len(addresses) == 0 {
 		return d, l, nil
 	}
-	return b.BridgeChain(d, addrs...)
+	return b.BridgeChain(d, addresses...)
 }
 
-func (b *BridgeChain) bridge(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
-	ur, err := url.Parse(addr)
+func (b *BridgeChain) bridge(dialer bridge.Dialer, address string) (bridge.Dialer, bridge.ListenConfig, error) {
+	ur, err := url.Parse(address)
 	if err != nil {
 		return nil, nil, err
 	}
 	dial, ok := b.proto[ur.Scheme]
 	if !ok {
-		return nil, nil, errors.New("not define " + addr)
+		return nil, nil, errors.New("not define " + address)
 	}
-	return dial.Bridge(dialer, addr)
+	return dial.Bridge(dialer, address)
 }
 
+// Register is register a new bridger for BridgeChain.
 func (b *BridgeChain) Register(name string, bridger bridge.Bridger) error {
 	b.proto[name] = bridger
 	return nil
