@@ -21,6 +21,7 @@ import (
 	_ "github.com/wzshiming/bridge/socks"
 	_ "github.com/wzshiming/bridge/socks5"
 	_ "github.com/wzshiming/bridge/ssh"
+	_ "github.com/wzshiming/bridge/tls"
 )
 
 var (
@@ -52,7 +53,6 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
-
 	fmt.Fprint(os.Stderr, showChain(dials, listens))
 
 	var (
