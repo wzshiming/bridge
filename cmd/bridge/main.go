@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge"
@@ -23,6 +22,8 @@ import (
 	_ "github.com/wzshiming/bridge/ssh"
 	_ "github.com/wzshiming/bridge/tls"
 )
+
+var std = log.New(os.Stderr, "[bridge] ", log.LstdFlags|log.Lmicroseconds)
 
 var (
 	listens []string
@@ -53,7 +54,7 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
-	fmt.Fprint(os.Stderr, showChain(dials, listens))
+	std.Println(showChain(dials, listens))
 
 	var (
 		bialer       bridge.Dialer       = &net.Dialer{}
@@ -65,7 +66,7 @@ func main() {
 	if len(dials) != 0 {
 		b, _, err := chain.Default.BridgeChain(nil, dials...)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+			std.Fatalln(err)
 			return
 		}
 		bialer = b
@@ -83,11 +84,11 @@ func main() {
 		if len(listens) != 0 {
 			_, l, err := chain.Default.BridgeChain(nil, listens...)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err.Error())
+				std.Fatalln(err)
 				return
 			}
 			if l == nil {
-				fmt.Fprintln(os.Stderr, "The last proxy could not listen")
+				std.Fatalln("The last proxy could not listen")
 				return
 			}
 			listenConfig = l
@@ -95,13 +96,13 @@ func main() {
 
 		listener, err := listenConfig.Listen(context.Background(), "tcp", listen)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+			std.Fatalln(err)
 			return
 		}
 		for {
 			raw, err := listener.Accept()
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err.Error())
+				std.Fatalln(err)
 				return
 			}
 
@@ -113,7 +114,7 @@ func main() {
 func connect(ctx context.Context, raw io.ReadWriteCloser, bri bridge.Dialer, from string, to string, dump bool) {
 	conn, err := bri.DialContext(ctx, "tcp", to)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		std.Fatalln(err)
 		return
 	}
 	defer raw.Close()
@@ -142,14 +143,7 @@ func (s *syncWriter) Write(p []byte) (n int, err error) {
 	mut.Lock()
 	defer mut.Unlock()
 	s.Count++
-	io.WriteString(os.Stderr, strconv.FormatInt(s.Count, 10))
-	io.WriteString(os.Stderr, ". ")
-	if s.Prefix != "" {
-		io.WriteString(os.Stderr, s.Prefix)
-		io.WriteString(os.Stderr, " ")
-	}
-	io.WriteString(os.Stderr, time.Now().Format(time.RFC3339Nano))
-	io.WriteString(os.Stderr, "\n")
+	std.Printf(" %d. %s \n", s.Count, s.Prefix)
 	w := hex.Dumper(os.Stderr)
 	defer w.Close()
 	return w.Write(p)
