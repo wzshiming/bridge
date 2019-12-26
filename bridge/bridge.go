@@ -22,7 +22,7 @@ func Bridge(listens, dials []string, dump bool) error {
 	log.Println(showChain(dials, listens))
 
 	var (
-		bialer       bridge.Dialer       = &net.Dialer{}
+		dialer       bridge.Dialer       = &net.Dialer{}
 		listenConfig bridge.ListenConfig = &net.ListenConfig{}
 	)
 
@@ -33,14 +33,14 @@ func Bridge(listens, dials []string, dump bool) error {
 		if err != nil {
 			return err
 		}
-		bialer = b
+		dialer = b
 	}
 
 	if len(listens) == 0 {
 		connect(context.Background(), struct {
 			io.ReadCloser
 			io.Writer
-		}{ioutil.NopCloser(os.Stdin), os.Stdout}, bialer, "STDIO", dial, dump)
+		}{ioutil.NopCloser(os.Stdin), os.Stdout}, dialer, "STDIO", dial, dump)
 	} else {
 		listen := resolveAddr(listens[0])
 		listens = listens[1:]
@@ -66,7 +66,7 @@ func Bridge(listens, dials []string, dump bool) error {
 				return err
 			}
 
-			go connect(context.Background(), raw, bialer, raw.RemoteAddr().String(), dial, dump)
+			go connect(context.Background(), raw, dialer, raw.RemoteAddr().String(), dial, dump)
 		}
 	}
 	return nil
