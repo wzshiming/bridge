@@ -2,9 +2,6 @@ package ssh
 
 import (
 	"context"
-	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"io/ioutil"
 	"net"
 	"net/url"
@@ -98,11 +95,7 @@ func config(addr string) (host string, config *ssh.ClientConfig, err error) {
 			}
 			file, err := ioutil.ReadFile(ident)
 			if err == nil {
-				key, err := parsePrivateKey(file)
-				if err != nil {
-					return "", nil, err
-				}
-				signer, err := ssh.NewSignerFromKey(key)
+				signer, err := ssh.ParsePrivateKey(file)
 				if err != nil {
 					return "", nil, err
 				}
@@ -111,20 +104,4 @@ func config(addr string) (host string, config *ssh.ClientConfig, err error) {
 		}
 	}
 	return host, config, nil
-}
-
-func parsePrivateKey(privKey []byte) (interface{}, error) {
-	var block, _ = pem.Decode(privKey)
-	if block == nil {
-		return nil, errors.New("Is not a valid private key")
-	}
-	var priv, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		var priv, err = x509.ParsePKCS8PrivateKey(block.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		return priv, nil
-	}
-	return priv, nil
 }
