@@ -1,7 +1,7 @@
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
-github.com/wzshiming/httpproxy v0.0.0-20191031030344-35a8c0232aed h1:YLziCMyUq63BnG2dkxHDPnLjw5J/+mEFSx16ppCEg8g=
-github.com/wzshiming/httpproxy v0.0.0-20191031030344-35a8c0232aed/go.mod h1:5urwBrQAA7SSD30kxt2E7DIKpySCGAHaTqicc6StiEY=
+github.com/wzshiming/httpproxy v0.0.4 h1:igkPGK9+X3/7RQIaCg/4ShnBUlky23M6aJbiqB9J9Mo=
+github.com/wzshiming/httpproxy v0.0.4/go.mod h1:myauOlIvyxHEGg3v49vlDTNBdlYSi6zSGzZlE+YL4oQ=
 github.com/wzshiming/socks v0.0.0-20191031031631-473648b72a10 h1:THyaekjCsRjSLZJD0bJWu2I9WkkYKjjqcrnzGMopQKc=
 github.com/wzshiming/socks v0.0.0-20191031031631-473648b72a10/go.mod h1:j3l92c1yVhE0sz2tx1/9SXLG2TPKlFuWe+VcWjti5fg=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
