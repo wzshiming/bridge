@@ -75,6 +75,7 @@ func Bridge(listens, dials []string, dump bool) error {
 func connect(ctx context.Context, raw io.ReadWriteCloser, bri bridge.Dialer, from string, to string, dump bool) {
 	conn, err := bri.DialContext(ctx, "tcp", to)
 	if err != nil {
+		raw.Close()
 		log.Println(err)
 		return
 	}
