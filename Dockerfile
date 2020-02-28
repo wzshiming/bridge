@@ -3,10 +3,6 @@ WORKDIR /go/src/github.com/wzshiming/bridge/
 COPY . .
 RUN go install ./cmd/bridge
 
-FROM wzshiming/upx AS upx
-COPY --from=builder /go/bin/ /go/bin/
-RUN upx /go/bin/*
-
 FROM alpine
-COPY --from=upx /go/bin/bridge /usr/local/bin/
+COPY --from=builder /go/bin/bridge /usr/local/bin/
 ENTRYPOINT [ "bridge" ]
