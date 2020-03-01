@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/wzshiming/bridge"
 	"golang.org/x/crypto/ssh"
@@ -25,32 +26,79 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig,
 	}
 
 	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
-			conn, err := dialer.DialContext(ctx, network, host)
+			cli, err := getCli(dialer, network, host, config)
 			if err != nil {
 				return nil, err
 			}
-
-			con, chans, reqs, err := ssh.NewClientConn(conn, host, config)
+			conn, err := cli.Dial(network, addr)
 			if err != nil {
-				return nil, err
-			}
+				resetCli()
+				cli, err := getCli(dialer, network, host, config)
+				if err != nil {
+					return nil, err
+				}
 
-			cli := ssh.NewClient(con, chans, reqs)
-			return cli.Dial(network, addr)
+				conn, err = cli.Dial(network, addr)
+				if err != nil {
+					resetCli()
+					return nil, err
+				}
+			}
+			return conn, nil
 		}), bridge.ListenConfigFunc(func(ctx context.Context, network, addr string) (net.Listener, error) {
-			conn, err := dialer.DialContext(ctx, network, host)
+			cli, err := getCli(dialer, network, host, config)
 			if err != nil {
 				return nil, err
 			}
-
-			con, chans, reqs, err := ssh.NewClientConn(conn, host, config)
+			listener, err := cli.Listen(network, addr)
 			if err != nil {
-				return nil, err
+				resetCli()
+				cli, err := getCli(dialer, network, host, config)
+				if err != nil {
+					return nil, err
+				}
+				listener, err = cli.Listen(network, addr)
+				if err != nil {
+					resetCli()
+					return nil, err
+				}
 			}
-
-			cli := ssh.NewClient(con, chans, reqs)
-			return cli.Listen(network, addr)
+			return listener, nil
 		}), nil
+}
+
+var (
+	mut sync.Mutex
+	cli *ssh.Client
+)
+
+func resetCli() {
+	mut.Lock()
+	defer mut.Unlock()
+	if cli == nil {
+		return
+	}
+	cli.Close()
+	cli = nil
+}
+
+func getCli(dialer bridge.Dialer, network string, host string, config *ssh.ClientConfig) (*ssh.Client, error) {
+	mut.Lock()
+	defer mut.Unlock()
+	if cli != nil {
+		return cli, nil
+	}
+	conn, err := dialer.DialContext(context.Background(), network, host)
+	if err != nil {
+		return nil, err
+	}
+
+	con, chans, reqs, err := ssh.NewClientConn(conn, host, config)
+	if err != nil {
+		return nil, err
+	}
+	cli = ssh.NewClient(con, chans, reqs)
+	return cli, nil
 }
 
 func config(addr string) (host string, config *ssh.ClientConfig, err error) {
