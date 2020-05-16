@@ -75,6 +75,38 @@ func (c *Client) getCli(ctx context.Context) error {
 	return nil
 }
 
+func (c *Client) CommandDialContext(ctx context.Context, cmd string) (net.Conn, error) {
+	return c.commandDialContext(ctx, cmd, 1)
+}
+
+func (c *Client) commandDialContext(ctx context.Context, cmd string, retry int) (net.Conn, error) {
+	err := c.getCli(ctx)
+	if err != nil {
+		return nil, err
+	}
+	sess, err := c.sshCli.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	conn1, conn2 := net.Pipe()
+	sess.Stdin = conn1
+	sess.Stdout = conn1
+	err = sess.Start(cmd)
+	if err != nil {
+		if retry != 0 {
+			c.reset()
+			return c.commandDialContext(ctx, cmd, retry-1)
+		}
+		return nil, err
+	}
+	go func() {
+		sess.Wait()
+		conn1.Close()
+	}()
+
+	return conn2, nil
+}
+
 func (c *Client) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	return c.dialContext(ctx, network, address, 1)
 }

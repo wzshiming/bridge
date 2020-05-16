@@ -15,19 +15,34 @@ import (
 
 // COMMAND cmd:shell
 func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, bridge.ListenConfig, error) {
-	if dialer != nil {
-		return nil, nil, fmt.Errorf("cmd only supported as first agent")
-	}
+
 	uri, err := url.Parse(cmd)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if dialer != nil {
+		cd, ok := dialer.(CommandDialer)
+		if !ok {
+			return nil, nil, fmt.Errorf("cmd must be the first agent or after the agent that can execute cmd, such as ssh")
+		}
+
+		return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
+			host, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			cmd := uri.Opaque
+			cmd = strings.ReplaceAll(cmd, "%h", host)
+			cmd = strings.ReplaceAll(cmd, "%p", port)
+			return cd.CommandDialContext(ctx, cmd)
+		}), nil, nil
 	}
 
 	scmd, err := parseCmd(uri.Opaque)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
 		host, port, err := net.SplitHostPort(addr)
 		if err != nil {
@@ -56,4 +71,8 @@ func parseCmd(cmd string) ([]string, error) {
 		return nil, err
 	}
 	return line, nil
+}
+
+type CommandDialer interface {
+	CommandDialContext(ctx context.Context, cmd string) (net.Conn, error)
 }
