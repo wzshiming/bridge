@@ -32,7 +32,7 @@ func Bridge(listens, dials []string, dump bool) error {
 	dial := dials[0]
 	dials = dials[1:]
 	if len(dials) != 0 {
-		b, _, err := chain.Default.BridgeChain(nil, dials...)
+		b, err := chain.Default.BridgeChain(nil, dials...)
 		if err != nil {
 			return err
 		}
@@ -53,11 +53,12 @@ func Bridge(listens, dials []string, dump bool) error {
 		listens = listens[1:]
 
 		if len(listens) != 0 {
-			_, l, err := chain.Default.BridgeChain(nil, listens...)
+			d, err := chain.Default.BridgeChain(nil, listens...)
 			if err != nil {
 				return err
 			}
-			if l == nil {
+			l, ok := d.(bridge.ListenConfig)
+			if !ok || l == nil {
 				return errors.New("the last proxy could not listen")
 			}
 			listenConfig = l

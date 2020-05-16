@@ -10,10 +10,10 @@ import (
 )
 
 // SOCKS5 socks5://[username:password@]{address}
-func SOCKS5(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
+func SOCKS5(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	ur, err := url.Parse(addr)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var auth *proxy.Auth
@@ -28,9 +28,9 @@ func SOCKS5(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConf
 	}
 	d, err := proxy.SOCKS5("tcp", ur.Host, auth, pd)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return d.(proxy.ContextDialer), nil, nil
+	return d.(proxy.ContextDialer), nil
 }
 
 type dialerWrap struct {

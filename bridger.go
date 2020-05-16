@@ -35,13 +35,13 @@ func (d DialFunc) DialContext(ctx context.Context, network, address string) (c n
 
 // Bridger contains options for crossing a bridge address.
 type Bridger interface {
-	Bridge(dialer Dialer, address string) (Dialer, ListenConfig, error)
+	Bridge(dialer Dialer, address string) (Dialer, error)
 }
 
 // BridgeFunc type is an adapter for Bridger.
-type BridgeFunc func(dialer Dialer, address string) (Dialer, ListenConfig, error)
+type BridgeFunc func(dialer Dialer, address string) (Dialer, error)
 
 // Bridge calls b(dialer, address)
-func (b BridgeFunc) Bridge(dialer Dialer, address string) (Dialer, ListenConfig, error) {
+func (b BridgeFunc) Bridge(dialer Dialer, address string) (Dialer, error) {
 	return b(dialer, address)
 }

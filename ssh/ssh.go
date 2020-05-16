@@ -15,21 +15,21 @@ import (
 )
 
 // SSH ssh://[username:password@]{address}[?identity_file=path/to/file]
-func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
+func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {
 		var d net.Dialer
 		dialer = bridge.DialFunc(d.DialContext)
 	}
 	host, config, err := config(addr)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	cli, err := newClient(dialer, host, config)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return cli, cli, nil
+	return cli, nil
 }
 
 type Client struct {

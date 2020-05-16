@@ -18,30 +18,30 @@ func NewBridgeChain() *BridgeChain {
 }
 
 // BridgeChain is multiple crossing of bridge.
-func (b *BridgeChain) BridgeChain(dialer bridge.Dialer, addresses ...string) (bridge.Dialer, bridge.ListenConfig, error) {
+func (b *BridgeChain) BridgeChain(dialer bridge.Dialer, addresses ...string) (bridge.Dialer, error) {
 	if len(addresses) == 0 {
-		return dialer, nil, nil
+		return dialer, nil
 	}
 	address := addresses[len(addresses)-1]
-	d, l, err := b.bridge(dialer, address)
+	d, err := b.bridge(dialer, address)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	addresses = addresses[:len(addresses)-1]
 	if len(addresses) == 0 {
-		return d, l, nil
+		return d, nil
 	}
 	return b.BridgeChain(d, addresses...)
 }
 
-func (b *BridgeChain) bridge(dialer bridge.Dialer, address string) (bridge.Dialer, bridge.ListenConfig, error) {
+func (b *BridgeChain) bridge(dialer bridge.Dialer, address string) (bridge.Dialer, error) {
 	ur, err := url.Parse(address)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	dial, ok := b.proto[ur.Scheme]
 	if !ok {
-		return nil, nil, errors.New("not define " + address)
+		return nil, errors.New("not define " + address)
 	}
 	return dial.Bridge(dialer, address)
 }

@@ -10,13 +10,13 @@ import (
 )
 
 // TLS tls:[opaque]
-func TLS(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig, error) {
+func TLS(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {
 		dialer = &net.Dialer{}
 	}
 	uri, err := url.Parse(addr)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
 		c, err = dialer.DialContext(ctx, network, addr)
@@ -37,5 +37,5 @@ func TLS(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig,
 			return nil, err
 		}
 		return tc, nil
-	}), nil, nil
+	}), nil
 }
