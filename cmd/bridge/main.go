@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	_ "github.com/wzshiming/bridge/command"
 	_ "github.com/wzshiming/bridge/connect"
 	_ "github.com/wzshiming/bridge/socks"
 	_ "github.com/wzshiming/bridge/socks5"

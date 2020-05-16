@@ -16,7 +16,10 @@ import (
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/commandproxy"
 )
+
+var ctx = context.Background()
 
 func Bridge(listens, dials []string, dump bool) error {
 	log.Println(showChain(dials, listens))
@@ -37,10 +40,14 @@ func Bridge(listens, dials []string, dump bool) error {
 	}
 
 	if len(listens) == 0 {
-		connect(context.Background(), struct {
+		from := struct {
 			io.ReadCloser
 			io.Writer
-		}{ioutil.NopCloser(os.Stdin), os.Stdout}, dialer, "STDIO", dial, dump)
+		}{
+			ReadCloser: ioutil.NopCloser(os.Stdin),
+			Writer:     os.Stdout,
+		}
+		step(ctx, dialer, from, "STDIO", dial, dump)
 	} else {
 		listen := resolveAddr(listens[0])
 		listens = listens[1:]
@@ -56,7 +63,7 @@ func Bridge(listens, dials []string, dump bool) error {
 			listenConfig = l
 		}
 
-		listener, err := listenConfig.Listen(context.Background(), "tcp", listen)
+		listener, err := listenConfig.Listen(ctx, "tcp", listen)
 		if err != nil {
 			return err
 		}
@@ -65,32 +72,46 @@ func Bridge(listens, dials []string, dump bool) error {
 			if err != nil {
 				return err
 			}
-
-			go connect(context.Background(), raw, dialer, raw.RemoteAddr().String(), dial, dump)
+			go step(ctx, dialer, raw, raw.RemoteAddr().String(), dial, dump)
 		}
 	}
 	return nil
 }
 
-func connect(ctx context.Context, raw io.ReadWriteCloser, bri bridge.Dialer, from string, to string, dump bool) {
-	conn, err := bri.DialContext(ctx, "tcp", to)
+func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, from, to string, dump bool) {
+	defer raw.Close()
+	conn, err := dialer.DialContext(ctx, "tcp", to)
 	if err != nil {
-		raw.Close()
 		log.Println(err)
 		return
 	}
-	defer raw.Close()
 	defer conn.Close()
+
+	err = connect(ctx, conn, raw, from, to, dump)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func connect(ctx context.Context, con, raw io.ReadWriteCloser, from string, to string, dump bool) error {
 	if dump {
 		dumpRaw := &syncWriter{Prefix: fmt.Sprintf("Send:    %s -> %s", from, to)}
 		dumpConn := &syncWriter{Prefix: fmt.Sprintf("Receive: %s <- %s", from, to)}
 
-		go io.Copy(conn, io.TeeReader(raw, dumpRaw))
-		io.Copy(raw, io.TeeReader(conn, dumpConn))
-	} else {
-		go io.Copy(conn, raw)
-		io.Copy(raw, conn)
+		type rwc struct {
+			io.Reader
+			io.WriteCloser
+		}
+		raw = rwc{
+			Reader:      io.TeeReader(raw, dumpRaw),
+			WriteCloser: raw,
+		}
+		con = rwc{
+			Reader:      io.TeeReader(con, dumpConn),
+			WriteCloser: con,
+		}
 	}
+	return commandproxy.Tunnel(ctx, con, raw)
 }
 
 var mut = sync.Mutex{}
