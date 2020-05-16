@@ -25,80 +25,94 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConfig,
 		return nil, nil, err
 	}
 
-	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
-			cli, err := getCli(dialer, network, host, config)
-			if err != nil {
-				return nil, err
-			}
-			conn, err := cli.Dial(network, addr)
-			if err != nil {
-				resetCli()
-				cli, err := getCli(dialer, network, host, config)
-				if err != nil {
-					return nil, err
-				}
-
-				conn, err = cli.Dial(network, addr)
-				if err != nil {
-					resetCli()
-					return nil, err
-				}
-			}
-			return conn, nil
-		}), bridge.ListenConfigFunc(func(ctx context.Context, network, addr string) (net.Listener, error) {
-			cli, err := getCli(dialer, network, host, config)
-			if err != nil {
-				return nil, err
-			}
-			listener, err := cli.Listen(network, addr)
-			if err != nil {
-				resetCli()
-				cli, err := getCli(dialer, network, host, config)
-				if err != nil {
-					return nil, err
-				}
-				listener, err = cli.Listen(network, addr)
-				if err != nil {
-					resetCli()
-					return nil, err
-				}
-			}
-			return listener, nil
-		}), nil
+	cli, err := newClient(dialer, host, config)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cli, cli, nil
 }
 
-var (
-	mut sync.Mutex
-	cli *ssh.Client
-)
+type Client struct {
+	mut    sync.Mutex
+	dialer bridge.Dialer
+	sshCli *ssh.Client
+	host   string
+	config *ssh.ClientConfig
+}
 
-func resetCli() {
-	mut.Lock()
-	defer mut.Unlock()
-	if cli == nil {
+func newClient(dialer bridge.Dialer, host string, config *ssh.ClientConfig) (*Client, error) {
+	cli := &Client{
+		dialer: dialer,
+		host:   host,
+		config: config,
+	}
+	return cli, nil
+}
+
+func (c *Client) reset() {
+	if c.sshCli == nil {
 		return
 	}
-	cli.Close()
-	cli = nil
+	c.sshCli.Close()
+	c.sshCli = nil
+}
+func (c *Client) getCli(ctx context.Context) error {
+	c.mut.Lock()
+	defer c.mut.Unlock()
+	if c.sshCli != nil {
+		return nil
+	}
+	conn, err := c.dialer.DialContext(ctx, "tcp", c.host)
+	if err != nil {
+		return err
+	}
+
+	con, chans, reqs, err := ssh.NewClientConn(conn, c.host, c.config)
+	if err != nil {
+		return err
+	}
+	c.sshCli = ssh.NewClient(con, chans, reqs)
+	return nil
 }
 
-func getCli(dialer bridge.Dialer, network string, host string, config *ssh.ClientConfig) (*ssh.Client, error) {
-	mut.Lock()
-	defer mut.Unlock()
-	if cli != nil {
-		return cli, nil
-	}
-	conn, err := dialer.DialContext(context.Background(), network, host)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	return c.dialContext(ctx, network, address, 1)
+}
 
-	con, chans, reqs, err := ssh.NewClientConn(conn, host, config)
+func (c *Client) dialContext(ctx context.Context, network, address string, retry int) (net.Conn, error) {
+	err := c.getCli(ctx)
 	if err != nil {
 		return nil, err
 	}
-	cli = ssh.NewClient(con, chans, reqs)
-	return cli, nil
+	conn, err := c.sshCli.Dial(network, address)
+	if err != nil {
+		if retry != 0 {
+			c.reset()
+			return c.dialContext(ctx, network, address, retry-1)
+		}
+		return nil, err
+	}
+	return conn, nil
+}
+
+func (c *Client) Listen(ctx context.Context, network, address string) (net.Listener, error) {
+	return c.listen(ctx, network, address, 1)
+}
+
+func (c *Client) listen(ctx context.Context, network, address string, retry int) (net.Listener, error) {
+	err := c.getCli(ctx)
+	if err != nil {
+		return nil, err
+	}
+	listener, err := c.sshCli.Listen(network, address)
+	if err != nil {
+		if retry != 0 {
+			c.reset()
+			return c.listen(ctx, network, address, retry-1)
+		}
+		return nil, err
+	}
+	return listener, nil
 }
 
 func config(addr string) (host string, config *ssh.ClientConfig, err error) {

@@ -19,7 +19,7 @@ func SOCKS5(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConf
 	var auth *proxy.Auth
 	var pd proxy.Dialer
 	if dialer != nil {
-		pd = dialerWrap{dialer}
+		pd = newDialerWarp(dialer)
 	}
 	if ur.User != nil {
 		auth = &proxy.Auth{}
@@ -30,11 +30,18 @@ func SOCKS5(dialer bridge.Dialer, addr string) (bridge.Dialer, bridge.ListenConf
 	if err != nil {
 		return nil, nil, err
 	}
-	return d.(bridge.Dialer), nil, nil
+	return d.(proxy.ContextDialer), nil, nil
 }
 
 type dialerWrap struct {
-	bridge.Dialer
+	proxy.ContextDialer
+}
+
+func newDialerWarp(d proxy.ContextDialer) proxy.Dialer {
+	if p, ok := d.(proxy.Dialer); ok {
+		return p
+	}
+	return dialerWrap{d}
 }
 
 // Dial connects to the given address via the proxy.
