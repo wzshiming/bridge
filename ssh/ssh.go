@@ -50,6 +50,8 @@ func newClient(dialer bridge.Dialer, host string, config *ssh.ClientConfig) (*Cl
 }
 
 func (c *Client) reset() {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	if c.sshCli == nil {
 		return
 	}
