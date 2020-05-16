@@ -54,7 +54,7 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, bridge.ListenConf
 			cc[i] = strings.ReplaceAll(cc[i], "%h", host)
 			cc[i] = strings.ReplaceAll(cc[i], "%p", port)
 		}
-		return commandproxy.ProxyCommand(context.Background(), cc[0], cc[1:]...).Stdio()
+		return commandproxy.ProxyCommand(ctx, cc[0], cc[1:]...).Stdio()
 	}), nil, nil
 }
 

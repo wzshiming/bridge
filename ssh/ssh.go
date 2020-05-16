@@ -91,6 +91,7 @@ func (c *Client) commandDialContext(ctx context.Context, cmd string, retry int) 
 	conn1, conn2 := net.Pipe()
 	sess.Stdin = conn1
 	sess.Stdout = conn1
+	sess.Stderr = os.Stderr
 	err = sess.Start(cmd)
 	if err != nil {
 		if retry != 0 {
