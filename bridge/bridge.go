@@ -16,6 +16,7 @@ import (
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/bridge/local"
 	"github.com/wzshiming/commandproxy"
 )
 
@@ -25,8 +26,8 @@ func Bridge(listens, dials []string, dump bool) error {
 	log.Println(showChain(dials, listens))
 
 	var (
-		dialer       bridge.Dialer       = &net.Dialer{}
-		listenConfig bridge.ListenConfig = &net.ListenConfig{}
+		dialer       bridge.Dialer       = local.LOCAL
+		listenConfig bridge.ListenConfig = local.LOCAL
 	)
 
 	dial := dials[0]
