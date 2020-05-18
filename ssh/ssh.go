@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -77,8 +78,13 @@ func (c *Client) getCli(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) CommandDialContext(ctx context.Context, cmd string) (net.Conn, error) {
-	return c.commandDialContext(ctx, cmd, 1)
+func (c *Client) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {
+	cmd := make([]string, 0, len(args)+1)
+	cmd = append(cmd, name)
+	for _, arg := range args {
+		cmd = append(cmd, strconv.Quote(arg))
+	}
+	return c.commandDialContext(ctx, strings.Join(cmd, " "), 1)
 }
 
 func (c *Client) commandDialContext(ctx context.Context, cmd string, retry int) (net.Conn, error) {

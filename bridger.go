@@ -48,5 +48,13 @@ func (b BridgeFunc) Bridge(dialer Dialer, address string) (Dialer, error) {
 
 // CommandDialer contains options for connecting to an address with command.
 type CommandDialer interface {
-	CommandDialContext(ctx context.Context, cmd string) (net.Conn, error)
+	CommandDialContext(ctx context.Context, name string, args ...string) (c net.Conn, err error)
+}
+
+// CommandDialFunc type is an adapter for Dialer  with command.
+type CommandDialFunc func(ctx context.Context, name string, args ...string) (c net.Conn, err error)
+
+// CommandDialFunc calls d(ctx, name, args...)
+func (d CommandDialFunc) CommandDialContext(ctx context.Context, name string, args ...string) (c net.Conn, err error) {
+	return d(ctx, name, args...)
 }

@@ -20,28 +20,22 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 		return nil, err
 	}
 
-	if dialer != nil {
-		cd, ok := dialer.(bridge.CommandDialer)
-		if !ok {
-			return nil, fmt.Errorf("cmd must be the first agent or after the agent that can execute cmd, such as ssh")
-		}
-
-		return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
-			host, port, err := net.SplitHostPort(addr)
-			if err != nil {
-				return nil, err
-			}
-			cmd := uri.Opaque
-			cmd = strings.ReplaceAll(cmd, "%h", host)
-			cmd = strings.ReplaceAll(cmd, "%p", port)
-			return cd.CommandDialContext(ctx, cmd)
-		}), nil
-	}
-
 	scmd, err := utils.SplitCommand(uri.Opaque)
 	if err != nil {
 		return nil, err
 	}
+
+	var commandDialer bridge.CommandDialer = bridge.CommandDialFunc(func(ctx context.Context, name string, args ...string) (c net.Conn, err error) {
+		return commandproxy.ProxyCommand(ctx, name, args...).Stdio()
+	})
+	if dialer != nil {
+		cd, ok := dialer.(bridge.CommandDialer)
+		if !ok || commandDialer == nil {
+			return nil, fmt.Errorf("cmd must be the first agent or after the agent that can execute cmd, such as ssh")
+		}
+		commandDialer = cd
+	}
+
 	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
 		host, port, err := net.SplitHostPort(addr)
 		if err != nil {
@@ -53,6 +47,6 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 			cc[i] = strings.ReplaceAll(cc[i], "%h", host)
 			cc[i] = strings.ReplaceAll(cc[i], "%p", port)
 		}
-		return commandproxy.ProxyCommand(ctx, cc[0], cc[1:]...).Stdio()
+		return commandDialer.CommandDialContext(ctx, cc[0], cc[1:]...)
 	}), nil
 }
