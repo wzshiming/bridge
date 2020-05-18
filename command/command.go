@@ -1,15 +1,14 @@
 package command
 
 import (
-	"bytes"
 	"context"
-	"encoding/csv"
 	"fmt"
 	"net"
 	"net/url"
 	"strings"
 
 	"github.com/wzshiming/bridge"
+	"github.com/wzshiming/bridge/internal/utils"
 	"github.com/wzshiming/commandproxy"
 )
 
@@ -22,7 +21,7 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 	}
 
 	if dialer != nil {
-		cd, ok := dialer.(CommandDialer)
+		cd, ok := dialer.(bridge.CommandDialer)
 		if !ok {
 			return nil, fmt.Errorf("cmd must be the first agent or after the agent that can execute cmd, such as ssh")
 		}
@@ -39,7 +38,7 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 		}), nil
 	}
 
-	scmd, err := parseCmd(uri.Opaque)
+	scmd, err := utils.SplitCommand(uri.Opaque)
 	if err != nil {
 		return nil, err
 	}
@@ -56,23 +55,4 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 		}
 		return commandproxy.ProxyCommand(ctx, cc[0], cc[1:]...).Stdio()
 	}), nil
-}
-
-func parseCmd(cmd string) ([]string, error) {
-	cmd = strings.TrimSpace(cmd)
-	if cmd == "" {
-		return nil, fmt.Errorf("cmd is empty")
-	}
-	r := csv.NewReader(bytes.NewBufferString(cmd))
-	r.Comma = ' '
-	r.TrimLeadingSpace = true
-	line, err := r.Read()
-	if err != nil {
-		return nil, err
-	}
-	return line, nil
-}
-
-type CommandDialer interface {
-	CommandDialContext(ctx context.Context, cmd string) (net.Conn, error)
 }
