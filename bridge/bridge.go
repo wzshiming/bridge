@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/url"
 	"os"
 	"strings"
@@ -50,7 +49,7 @@ func Bridge(listens, dials []string, dump bool) error {
 		}
 		step(ctx, dialer, from, "STDIO", dial, dump)
 	} else {
-		listen := resolveAddr(listens[0])
+		network, listen := resolveProtocol(listens[0])
 		listens = listens[1:]
 
 		if len(listens) != 0 {
@@ -65,7 +64,7 @@ func Bridge(listens, dials []string, dump bool) error {
 			listenConfig = l
 		}
 
-		listener, err := listenConfig.Listen(ctx, "tcp", listen)
+		listener, err := listenConfig.Listen(ctx, network, listen)
 		if err != nil {
 			return err
 		}
@@ -82,7 +81,8 @@ func Bridge(listens, dials []string, dump bool) error {
 
 func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, from, to string, dump bool) {
 	defer raw.Close()
-	conn, err := dialer.DialContext(ctx, "tcp", to)
+	network, address := resolveProtocol(to)
+	conn, err := dialer.DialContext(ctx, network, address)
 	if err != nil {
 		log.Println(err)
 		return
@@ -134,16 +134,20 @@ func (s *syncWriter) Write(p []byte) (n int, err error) {
 	return w.Write(p)
 }
 
-func resolveAddr(addr string) string {
-	a, err := net.ResolveTCPAddr("tcp", addr)
+func resolveProtocol(addr string) (network, address string) {
+	network = "tcp"
+	u, err := url.Parse(addr)
 	if err != nil {
-		return addr
+		return network, addr
 	}
-	if len(a.IP) == 0 {
-		a.IP = net.IP{0, 0, 0, 0}
-		return a.String()
+	if u.Host == "" {
+		return network, addr
 	}
-	return addr
+	address = u.Host
+	if u.Scheme != "" {
+		network = u.Scheme
+	}
+	return network, address
 }
 
 func showChain(dials, listens []string) string {
