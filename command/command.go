@@ -5,22 +5,19 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"strings"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/internal/utils"
 	"github.com/wzshiming/commandproxy"
 )
 
 // COMMAND cmd:shell
 func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
-
 	uri, err := url.Parse(cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	scmd, err := utils.SplitCommand(uri.Opaque)
+	scmd, err := commandproxy.SplitCommand(uri.Opaque)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +40,13 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 		}
 		cc := make([]string, len(scmd))
 		copy(cc, scmd)
+
+		m := map[byte]string{
+			'h': host,
+			'p': port,
+		}
 		for i := 0; i != len(cc); i++ {
-			cc[i] = strings.ReplaceAll(cc[i], "%h", host)
-			cc[i] = strings.ReplaceAll(cc[i], "%p", port)
+			cc[i] = commandproxy.ReplaceEscape(cc[i], m)
 		}
 		return commandDialer.CommandDialContext(ctx, cc[0], cc[1:]...)
 	}), nil

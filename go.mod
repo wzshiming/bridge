@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/spf13/pflag v1.0.5
-	github.com/wzshiming/commandproxy v0.0.1
+	github.com/wzshiming/commandproxy v0.0.2
 	github.com/wzshiming/httpproxy v0.1.6
 	github.com/wzshiming/socks v0.0.0-20191031031631-473648b72a10
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
