@@ -1,6 +1,6 @@
 # Bridge
 
-Bridge 是一个支持 http(s)-connect socks4/4a/5/5h ssh 的tcp代理工具
+Bridge 是一个支持 http(s)-connect socks4/4a/5/5h ssh proxycommand 的tcp代理工具
 
 [![Build Status](https://travis-ci.org/wzshiming/bridge.svg?branch=master)](https://travis-ci.org/wzshiming/bridge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/bridge)](https://goreportcard.com/report/github.com/wzshiming/bridge)
@@ -27,6 +27,8 @@ bridge -b :8080 -p github.io:80 -p ssh://username:password@my_server:22
 bridge -b :8080 -p github.io:80 -p ssh://username@my_server:22?identity_file=~/.ssh/id_rsa
 bridge -b :8080 -p github.io:80 -p socks5://username:password@my_server:1080
 bridge -b :8080 -p github.io:80 -p http://username:password@my_server:8080
+bridge -b :8080 -p github.io:80 -p 'cmd:nc %h %p'
+bridge -b :8080 -p github.io:80 -p 'cmd:ssh sshserver nc %h %p'
 ```
 
 也可以经过多级代理  
@@ -54,11 +56,11 @@ ProxyCommand bridge -p %h:%p -p "ssh://username@my_server?identity_file=~/.ssh/i
 ## 用法
 
 ``` text
-        bridge [-d] \
-        [-b=[bind_address]:bind_port \
-        [-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks5|socks4|socks4a|https|http|ssh)://bridge_bind_address:bridge_bind_port ...]]] \ //
-        -p=proxy_address:proxy_port \
-        [-p=(socks4|socks4a|socks5|socks5h|https|http|ssh)://bridge_proxy_address:bridge_proxy_port ...]
+Usage: bridge [-d] \
+	[-b=[[tcp://]bind_address]:bind_port \
+	[-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_bind_address:bridge_bind_port ...]]] \ // 
+	-p=[tcp://]proxy_address:proxy_port \
+	[-p=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_proxy_address:bridge_proxy_port ...]
   -b, --bind strings    第一个是侦听地址，然后是侦听地址通过的代理。
                         如果未填写，则重定向到管道。
                         只有ssh和本地支持监听，所以最后一个代理必须是ssh。

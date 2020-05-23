@@ -22,14 +22,14 @@ var (
 	dump    bool
 )
 
-const defaults = `Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh
+const defaults = `Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh proxycommand
 More information, please go to https://github.com/wzshiming/bridge
 
 Usage: bridge [-d] \
-	[-b=[bind_address]:bind_port \
-	[-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks4|socks4a|socks5|socks5h|https|http|ssh)://bridge_bind_address:bridge_bind_port ...]]] \ // 
-	-p=proxy_address:proxy_port \
-	[-p=(socks4|socks4a|socks5|socks5h|https|http|ssh)://bridge_proxy_address:bridge_proxy_port ...]
+	[-b=[[tcp://]bind_address]:bind_port \
+	[-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_bind_address:bridge_bind_port ...]]] \ // 
+	-p=[tcp://]proxy_address:proxy_port \
+	[-p=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_proxy_address:bridge_proxy_port ...]
 `
 
 func init() {

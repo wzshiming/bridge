@@ -1,6 +1,6 @@
 # Bridge
 
-Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh
+Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh proxycommand
 
 [![Build Status](https://travis-ci.org/wzshiming/bridge.svg?branch=master)](https://travis-ci.org/wzshiming/bridge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/bridge)](https://goreportcard.com/report/github.com/wzshiming/bridge)
@@ -27,6 +27,8 @@ bridge -b :8080 -p github.io:80 -p ssh://username:password@my_server:22
 bridge -b :8080 -p github.io:80 -p ssh://username@my_server:22?identity_file=~/.ssh/id_rsa
 bridge -b :8080 -p github.io:80 -p socks5://username:password@my_server:1080
 bridge -b :8080 -p github.io:80 -p http://username:password@my_server:8080
+bridge -b :8080 -p github.io:80 -p 'cmd:nc %h %p'
+bridge -b :8080 -p github.io:80 -p 'cmd:ssh sshserver nc %h %p'
 ```
 
 It can also go through multi-level proxy  
@@ -56,11 +58,11 @@ ProxyCommand bridge -p %h:%p -p "ssh://username@my_server?identity_file=~/.ssh/i
 ## Usage
 
 ``` text
-        bridge [-d] \
-        [-b=[bind_address]:bind_port \
-        [-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks5|socks4|socks4a|https|http|ssh)://bridge_bind_address:bridge_bind_port ...]]] \ //
-        -p=proxy_address:proxy_port \
-        [-p=(socks4|socks4a|socks5|socks5h|https|http|ssh)://bridge_proxy_address:bridge_proxy_port ...]
+Usage: bridge [-d] \
+	[-b=[[tcp://]bind_address]:bind_port \
+	[-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_bind_address:bridge_bind_port ...]]] \ // 
+	-p=[tcp://]proxy_address:proxy_port \
+	[-p=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_proxy_address:bridge_proxy_port ...]
   -b, --bind strings    The first is the listening address, and then the proxy through which the listening address passes.
                         If it is not filled in, it is redirected to the pipeline.
                         only SSH and local support listening, so the last proxy must be ssh.
