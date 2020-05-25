@@ -33,21 +33,12 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 		commandDialer = cd
 	}
 
-	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
-		host, port, err := net.SplitHostPort(addr)
+	dp := commandproxy.DialProxyCommand(scmd)
+	return bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
+		proxy, err := dp.Format(network, address)
 		if err != nil {
 			return nil, err
 		}
-		cc := make([]string, len(scmd))
-		copy(cc, scmd)
-
-		m := map[byte]string{
-			'h': host,
-			'p': port,
-		}
-		for i := 0; i != len(cc); i++ {
-			cc[i] = commandproxy.ReplaceEscape(cc[i], m)
-		}
-		return commandDialer.CommandDialContext(ctx, cc[0], cc[1:]...)
+		return commandDialer.CommandDialContext(ctx, proxy[0], proxy[1:]...)
 	}), nil
 }
