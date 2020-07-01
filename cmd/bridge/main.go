@@ -10,6 +10,7 @@ import (
 	_ "github.com/wzshiming/bridge/socks5"
 	_ "github.com/wzshiming/bridge/ssh"
 	_ "github.com/wzshiming/bridge/tls"
+	_ "github.com/wzshiming/bridge/ws"
 
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge/bridge"
