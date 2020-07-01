@@ -12,14 +12,14 @@ import (
 	"sync"
 
 	"github.com/wzshiming/bridge"
+	"github.com/wzshiming/bridge/local"
 	"golang.org/x/crypto/ssh"
 )
 
 // SSH ssh://[username:password@]{address}[?identity_file=path/to/file]
 func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {
-		var d net.Dialer
-		dialer = bridge.DialFunc(d.DialContext)
+		dialer = local.LOCAL
 	}
 	host, config, err := config(addr)
 	if err != nil {

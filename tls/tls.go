@@ -7,12 +7,13 @@ import (
 	"net/url"
 
 	"github.com/wzshiming/bridge"
+	"github.com/wzshiming/bridge/local"
 )
 
 // TLS tls:[opaque]
 func TLS(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {
-		dialer = &net.Dialer{}
+		dialer = local.LOCAL
 	}
 	uri, err := url.Parse(addr)
 	if err != nil {
