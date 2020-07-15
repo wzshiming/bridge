@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/local"
 	"github.com/wzshiming/commandproxy"
 	"golang.org/x/net/websocket"
@@ -31,7 +30,7 @@ func WS(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println(len(scmd), scmd)
+
 	addr = scmd[0]
 	for _, header := range scmd {
 		i := strings.IndexByte(header, ':')
@@ -78,7 +77,6 @@ func WS(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 
 func dialWithDialer(ctx context.Context, dialer bridge.Dialer, config *websocket.Config) (net.Conn, error) {
 	addr := parseAuthority(config.Location)
-	log.Println(addr)
 	conn, err := dialer.DialContext(ctx, "tcp", addr)
 	if err != nil {
 		return nil, err
