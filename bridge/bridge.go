@@ -16,6 +16,7 @@ import (
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/local"
+	"github.com/wzshiming/bridge/proxy"
 	"github.com/wzshiming/commandproxy"
 )
 
@@ -68,12 +69,24 @@ func Bridge(listens, dials []string, dump bool) error {
 		if err != nil {
 			return err
 		}
-		for {
-			raw, err := listener.Accept()
-			if err != nil {
-				return err
+
+		if dial == "-" {
+			svc := proxy.NewProxy(dialer)
+			for {
+				raw, err := listener.Accept()
+				if err != nil {
+					return err
+				}
+				go svc.ServeConn(raw)
 			}
-			go step(ctx, dialer, raw, raw.RemoteAddr().String(), dial, dump)
+		} else {
+			for {
+				raw, err := listener.Accept()
+				if err != nil {
+					return err
+				}
+				go step(ctx, dialer, raw, raw.RemoteAddr().String(), dial, dump)
+			}
 		}
 	}
 	return nil

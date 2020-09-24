@@ -1,15 +1,15 @@
 module github.com/wzshiming/bridge
 
-go 1.14
+go 1.15
 
 require (
 	github.com/spf13/pflag v1.0.5
 	github.com/wzshiming/commandproxy v0.1.0
-	github.com/wzshiming/httpproxy v0.2.0
-	github.com/wzshiming/socks v0.0.0-20191031031631-473648b72a10
+	github.com/wzshiming/httpproxy v0.2.1
+	github.com/wzshiming/socks4 v0.1.0
+	github.com/wzshiming/socks5 v0.1.0
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2
-
 )
 
 replace (

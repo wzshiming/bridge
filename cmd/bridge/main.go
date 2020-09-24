@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/wzshiming/bridge/command"
 	_ "github.com/wzshiming/bridge/connect"
-	_ "github.com/wzshiming/bridge/socks"
+	_ "github.com/wzshiming/bridge/socks4"
 	_ "github.com/wzshiming/bridge/socks5"
 	_ "github.com/wzshiming/bridge/ssh"
 	_ "github.com/wzshiming/bridge/tls"

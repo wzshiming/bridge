@@ -3,8 +3,6 @@ package bridge
 import (
 	"context"
 	"net"
-
-	"golang.org/x/net/proxy"
 )
 
 // ListenConfig contains options for listening to an address.
@@ -22,7 +20,7 @@ func (l ListenConfigFunc) Listen(ctx context.Context, network, address string) (
 
 // Dialer contains options for connecting to an address.
 type Dialer interface {
-	proxy.ContextDialer
+	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
 // DialFunc type is an adapter for Dialer.
