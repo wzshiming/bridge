@@ -13,45 +13,52 @@ Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh proxycomma
 
 ## Example
 
-Mapping github.io: 80 TCP port to 8080 port of the local machine  
-access using IP will return 404 pages.  
+Mapping example.org:80 TCP port to 8080 port of the local machines.  
 
 ``` shell
-bridge -b :8080 -p github.io:80
+bridge -b :8080 -p example.org:80
+# `curl -H 'Host: example.org' 127.0.0.1:8080` will return to the target page
 ```
 
-Proxy that can go through various protocols  
+Proxy that can go through various protocols.  
 
 ``` shell
-bridge -b :8080 -p github.io:80 -p ssh://username:password@my_server:22
-bridge -b :8080 -p github.io:80 -p ssh://username@my_server:22?identity_file=~/.ssh/id_rsa
-bridge -b :8080 -p github.io:80 -p socks5://username:password@my_server:1080
-bridge -b :8080 -p github.io:80 -p http://username:password@my_server:8080
-bridge -b :8080 -p github.io:80 -p 'cmd:nc %h %p'
-bridge -b :8080 -p github.io:80 -p 'cmd:ssh sshserver nc %h %p'
+bridge -b :8080 -p example.org:80 -p ssh://username:password@my_server:22
+bridge -b :8080 -p example.org:80 -p ssh://username@my_server:22?identity_file=~/.ssh/id_rsa
+bridge -b :8080 -p example.org:80 -p socks5://username:password@my_server:1080
+bridge -b :8080 -p example.org:80 -p http://username:password@my_server:8080
+bridge -b :8080 -p example.org:80 -p 'cmd:nc %h %p'
+bridge -b :8080 -p example.org:80 -p 'cmd:ssh sshserver nc %h %p'
 ```
 
-It can also go through multi-level proxy  
+It can also go through multi-level proxy.  
 
 ``` shell
-bridge -b :8080 -p github.io:80 -p http://username:password@my_server2:8080 -p http://username:password@my_server1:8080
+bridge -b :8080 -p example.org:80 -p http://username:password@my_server2:8080 -p http://username:password@my_server1:8080
+```
 
+Using proxy protocol(http/socks4/socks5) instead of direct TCP forwarding.  
+
+``` shell
+bridge -b :8080 -p -
+bridge -b :8080 -p - -p http://username:password@my_server1:8080
+# `http_proxy=http://127.0.0.1:8080 curl example.org` Will be the proxy
 ```
 
 You can also use ssh to listen for port mapping from local port to server port,  
 due to the limitation of sshd, only 127.0.0.1 ports can be monitored.  
 if you want to provide external services,  
-you need to change the gatewayports no in /etc/ssh/ sshd_config to yes  
+you need to change the 'GatewayPorts no' in /etc/ssh/sshd_config to yes  
 and then reload sshd.  
 
 ``` shell
 bridge -b :8080 -b ssh://username:password@my_server:22 -p 127.0.0.1:80
 ```
 
-More of the time I'm acting as an ssh proxy  
-in ~/.ssh/config  
+More of the time I'm acting as a ssh proxy.  
 
 ``` text
+# in ~/.ssh/config
 ProxyCommand bridge -p %h:%p -p "ssh://username@my_server?identity_file=~/.ssh/id_rsa"
 ```
 
@@ -61,7 +68,7 @@ ProxyCommand bridge -p %h:%p -p "ssh://username@my_server?identity_file=~/.ssh/i
 Usage: bridge [-d] \
 	[-b=[[tcp://]bind_address]:bind_port \
 	[-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_bind_address:bridge_bind_port ...]]] \ // 
-	-p=[tcp://]proxy_address:proxy_port \
+	-p=([tcp://]proxy_address:proxy_port|-) \
 	[-p=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_proxy_address:bridge_proxy_port ...]
   -b, --bind strings    The first is the listening address, and then the proxy through which the listening address passes.
                         If it is not filled in, it is redirected to the pipeline.
