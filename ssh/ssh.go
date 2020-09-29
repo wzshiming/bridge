@@ -59,23 +59,25 @@ func (c *Client) reset() {
 	c.sshCli.Close()
 	c.sshCli = nil
 }
-func (c *Client) getCli(ctx context.Context) error {
+func (c *Client) getCli(ctx context.Context) (*ssh.Client, error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
-	if c.sshCli != nil {
-		return nil
+	cli := c.sshCli
+	if cli != nil {
+		return cli, nil
 	}
 	conn, err := c.dialer.DialContext(ctx, "tcp", c.host)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	con, chans, reqs, err := ssh.NewClientConn(conn, c.host, c.config)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	c.sshCli = ssh.NewClient(con, chans, reqs)
-	return nil
+	cli = ssh.NewClient(con, chans, reqs)
+	c.sshCli = cli
+	return cli, nil
 }
 
 func (c *Client) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {
@@ -88,11 +90,11 @@ func (c *Client) CommandDialContext(ctx context.Context, name string, args ...st
 }
 
 func (c *Client) commandDialContext(ctx context.Context, cmd string, retry int) (net.Conn, error) {
-	err := c.getCli(ctx)
+	cli, err := c.getCli(ctx)
 	if err != nil {
 		return nil, err
 	}
-	sess, err := c.sshCli.NewSession()
+	sess, err := cli.NewSession()
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +123,11 @@ func (c *Client) DialContext(ctx context.Context, network, address string) (net.
 }
 
 func (c *Client) dialContext(ctx context.Context, network, address string, retry int) (net.Conn, error) {
-	err := c.getCli(ctx)
+	cli, err := c.getCli(ctx)
 	if err != nil {
 		return nil, err
 	}
-	conn, err := c.sshCli.Dial(network, address)
+	conn, err := cli.Dial(network, address)
 	if err != nil {
 		if retry != 0 {
 			c.reset()
@@ -141,11 +143,11 @@ func (c *Client) Listen(ctx context.Context, network, address string) (net.Liste
 }
 
 func (c *Client) listen(ctx context.Context, network, address string, retry int) (net.Listener, error) {
-	err := c.getCli(ctx)
+	cli, err := c.getCli(ctx)
 	if err != nil {
 		return nil, err
 	}
-	listener, err := c.sshCli.Listen(network, address)
+	listener, err := cli.Listen(network, address)
 	if err != nil {
 		if retry != 0 {
 			c.reset()
