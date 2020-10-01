@@ -139,6 +139,13 @@ func (c *Client) dialContext(ctx context.Context, network, address string, retry
 }
 
 func (c *Client) Listen(ctx context.Context, network, address string) (net.Listener, error) {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
+	if host == "" {
+		address = net.JoinHostPort("0.0.0.0", port)
+	}
 	return c.listen(ctx, network, address, 1)
 }
 
