@@ -198,22 +198,25 @@ func config(addr string) (host string, config *ssh.ClientConfig, err error) {
 
 	identityFiles := ur.Query()["identity_file"]
 	for _, ident := range identityFiles {
-		if ident != "" {
-			if strings.HasPrefix(ident, "~") {
-				home, err := os.UserHomeDir()
-				if err == nil {
-					ident = filepath.Join(home, ident[1:])
-				}
-			}
-			file, err := ioutil.ReadFile(ident)
+		if ident == "" {
+			continue
+		}
+		if strings.HasPrefix(ident, "~") {
+			home, err := os.UserHomeDir()
 			if err == nil {
-				signer, err := ssh.ParsePrivateKey(file)
-				if err != nil {
-					return "", nil, err
-				}
-				config.Auth = append(config.Auth, ssh.PublicKeys(signer))
+				ident = filepath.Join(home, ident[1:])
 			}
 		}
+
+		file, err := ioutil.ReadFile(ident)
+		if err != nil {
+			return "", nil, err
+		}
+		signer, err := ssh.ParsePrivateKey(file)
+		if err != nil {
+			return "", nil, err
+		}
+		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 	}
 	return host, config, nil
 }
