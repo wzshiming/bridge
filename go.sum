@@ -4,10 +4,10 @@ github.com/wzshiming/commandproxy v0.1.0 h1:GX2Jveq6ttd8xSBN4v4dBNgiqbRmaJaCdOJq
 github.com/wzshiming/commandproxy v0.1.0/go.mod h1:wS6+aJ9KMHciqYX3xmDO0W+QVY0zvngeBvmoIFMfq8A=
 github.com/wzshiming/httpproxy v0.3.1 h1:nCvvvsxlUQj9M7z5tA4aGptZGI1epDEL+sMo9vlPwE8=
 github.com/wzshiming/httpproxy v0.3.1/go.mod h1:3klJUWMVtAFnHcLB1dTyijHLeAVcoSxbvLC7AQH5v4k=
-github.com/wzshiming/socks4 v0.1.1 h1:kw17RTq8237K0pFsKk1+2BFLCd3supCYlIb0jpVENPU=
-github.com/wzshiming/socks4 v0.1.1/go.mod h1:YEPfhjf/4JezwdTmgXZU+UX+A2KvD05quzhsUBVMNA0=
-github.com/wzshiming/socks5 v0.1.1 h1:RXA1speDJFbMT+6SVs5kkjLiKutfKLhfzgONwZXx2jc=
-github.com/wzshiming/socks5 v0.1.1/go.mod h1:BvCAqlzocQN5xwLjBZDBbvWlrx8sCYSSbHEOf2wZgT0=
+github.com/wzshiming/socks4 v0.2.1 h1:kK58/JHc8XVvdTgfd1xdiEECRAkEosDj8yTKT53nFwA=
+github.com/wzshiming/socks4 v0.2.1/go.mod h1:YEPfhjf/4JezwdTmgXZU+UX+A2KvD05quzhsUBVMNA0=
+github.com/wzshiming/socks5 v0.2.1 h1:uyfdeuxtA5M/fkbRH5PZzxz6cPX7sJEi699Y8hxisnY=
+github.com/wzshiming/socks5 v0.2.1/go.mod h1:BvCAqlzocQN5xwLjBZDBbvWlrx8sCYSSbHEOf2wZgT0=
 golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 h1:hb9wdF1z5waM+dSIICn1l0DkLVDT3hqhhQsDNUmHPRE=
 golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0 h1:wBouT66WTYFXdxfVdz9sVWARVd/2vfGcmI45D2gj45M=
