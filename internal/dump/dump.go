@@ -4,10 +4,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"sync"
+
+	"github.com/wzshiming/bridge/internal/log"
 )
 
 var mut = sync.Mutex{}

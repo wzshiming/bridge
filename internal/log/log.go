@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var std = log.New(os.Stderr, "[bridge] ", log.LstdFlags|log.Lmicroseconds)
+var std = log.New(os.Stderr, "# ", log.LstdFlags|log.Lmicroseconds)
 
 // Print calls Output to print to the standard logger.
 // Arguments are handled in the manner of fmt.Print.
