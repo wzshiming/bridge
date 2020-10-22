@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bufio"
 	"net"
 	"net/http"
 
@@ -34,13 +35,19 @@ func NewProxy(dial bridge.Dialer) *proxy {
 
 // ServeConn is used to serve a single connection.
 func (s *proxy) ServeConn(conn net.Conn) {
+	// this layer of packaging is to dump the output without interruption
+	conn = &connBuffReader{
+		Conn:   conn,
+		Reader: bufio.NewReader(conn),
+	}
+
 	var p [1]byte
-	_, err := conn.Read(p[:])
+	n, err := conn.Read(p[:])
 	if err != nil {
 		conn.Close()
 		return
 	}
-	conn = UnreadConn(conn, []byte{p[0]})
+	conn = UnreadConn(conn, p[:n])
 	switch p[0] {
 	case 0x04:
 		s.socks4Proxy.ServeConn(conn)
@@ -49,4 +56,13 @@ func (s *proxy) ServeConn(conn net.Conn) {
 	default:
 		s.httpProxy.Serve(NewSingleConnListener(conn))
 	}
+}
+
+type connBuffReader struct {
+	net.Conn
+	*bufio.Reader
+}
+
+func (c *connBuffReader) Read(p []byte) (n int, err error) {
+	return c.Reader.Read(p)
 }

@@ -2,27 +2,27 @@ package bridge
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
+	"github.com/wzshiming/bridge/internal/dump"
 	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/bridge/internal/proxy"
 	"github.com/wzshiming/bridge/local"
-	"github.com/wzshiming/bridge/proxy"
 	"github.com/wzshiming/commandproxy"
 )
 
 var ctx = context.Background()
 
-func Bridge(listens, dials []string, dump bool) error {
+func Bridge(listens, dials []string, d bool) error {
 	log.Println(showChain(dials, listens))
 
 	var (
@@ -41,14 +41,18 @@ func Bridge(listens, dials []string, dump bool) error {
 	}
 
 	if len(listens) == 0 {
-		from := struct {
+		var raw io.ReadWriteCloser = struct {
 			io.ReadCloser
 			io.Writer
 		}{
 			ReadCloser: ioutil.NopCloser(os.Stdin),
 			Writer:     os.Stdout,
 		}
-		step(ctx, dialer, from, "STDIO", dial, dump)
+
+		if d {
+			raw = dump.NewDumpReadWriteCloser(raw, true, "STDIO", dial)
+		}
+		step(ctx, dialer, raw, dial)
 	} else {
 		network, listen := resolveProtocol(listens[0])
 		listens = listens[1:]
@@ -71,12 +75,19 @@ func Bridge(listens, dials []string, dump bool) error {
 		}
 
 		if dial == "-" {
-			svc := proxy.NewProxy(dialer)
 			for {
 				raw, err := listener.Accept()
 				if err != nil {
 					return err
 				}
+				from := raw.RemoteAddr().String()
+				svc := proxy.NewProxy(bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
+					c, err = dialer.DialContext(ctx, network, address)
+					if d {
+						c = dump.NewDumpConn(c, false, from, address)
+					}
+					return c, err
+				}))
 				go svc.ServeConn(raw)
 			}
 		} else {
@@ -85,16 +96,19 @@ func Bridge(listens, dials []string, dump bool) error {
 				if err != nil {
 					return err
 				}
-				go step(ctx, dialer, raw, raw.RemoteAddr().String(), dial, dump)
+				if d {
+					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), dial)
+				}
+				go step(ctx, dialer, raw, dial)
 			}
 		}
 	}
 	return nil
 }
 
-func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, from, to string, dump bool) {
+func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, addr string) {
 	defer raw.Close()
-	network, address := resolveProtocol(to)
+	network, address := resolveProtocol(addr)
 	conn, err := dialer.DialContext(ctx, network, address)
 	if err != nil {
 		log.Println(err)
@@ -102,49 +116,10 @@ func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, fro
 	}
 	defer conn.Close()
 
-	err = connect(ctx, conn, raw, from, to, dump)
+	err = commandproxy.Tunnel(ctx, conn, raw)
 	if err != nil {
 		log.Println(err)
 	}
-}
-
-func connect(ctx context.Context, con, raw io.ReadWriteCloser, from string, to string, dump bool) error {
-	if dump {
-		dumpRaw := &syncWriter{Prefix: fmt.Sprintf("Send:    %s -> %s", from, to)}
-		dumpConn := &syncWriter{Prefix: fmt.Sprintf("Receive: %s <- %s", from, to)}
-
-		type rwc struct {
-			io.Reader
-			io.WriteCloser
-		}
-		raw = rwc{
-			Reader:      io.TeeReader(raw, dumpRaw),
-			WriteCloser: raw,
-		}
-		con = rwc{
-			Reader:      io.TeeReader(con, dumpConn),
-			WriteCloser: con,
-		}
-	}
-	return commandproxy.Tunnel(ctx, con, raw)
-}
-
-var mut = sync.Mutex{}
-
-// syncWriter the asynchronous output is locked only for debug with no performance considerations
-type syncWriter struct {
-	Prefix string
-	Count  int64
-}
-
-func (s *syncWriter) Write(p []byte) (n int, err error) {
-	mut.Lock()
-	defer mut.Unlock()
-	s.Count++
-	log.Printf(" %d. %s \n", s.Count, s.Prefix)
-	w := hex.Dumper(os.Stderr)
-	defer w.Close()
-	return w.Write(p)
 }
 
 func resolveProtocol(addr string) (network, address string) {
