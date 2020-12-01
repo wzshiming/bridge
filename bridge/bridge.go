@@ -11,11 +11,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/internal/dump"
 	"github.com/wzshiming/bridge/internal/log"
-	"github.com/wzshiming/bridge/internal/proxy"
 	"github.com/wzshiming/bridge/local"
 	"github.com/wzshiming/commandproxy"
 )
@@ -75,20 +75,31 @@ func Bridge(listens, dials []string, d bool) error {
 		}
 
 		if dial == "-" {
-			for {
-				raw, err := listener.Accept()
-				if err != nil {
-					return err
-				}
-				from := raw.RemoteAddr().String()
-				svc := proxy.NewProxy(bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
-					c, err = dialer.DialContext(ctx, network, address)
-					if d {
-						c = dump.NewDumpConn(c, false, from, address)
+			if d {
+				for {
+					raw, err := listener.Accept()
+					if err != nil {
+						return err
 					}
-					return c, err
-				}))
-				go svc.ServeConn(raw)
+					from := raw.RemoteAddr().String()
+					svc := anyproxy.NewAnyProxy(bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
+						c, err = dialer.DialContext(ctx, network, address)
+						if err != nil {
+							return nil, err
+						}
+						return dump.NewDumpConn(c, false, from, address), nil
+					}), log.Std)
+					go svc.ServeConn(raw)
+				}
+			} else {
+				svc := anyproxy.NewAnyProxy(dialer, log.Std)
+				for {
+					raw, err := listener.Accept()
+					if err != nil {
+						return err
+					}
+					go svc.ServeConn(raw)
+				}
 			}
 		} else {
 			for {
