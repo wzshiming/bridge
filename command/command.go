@@ -34,11 +34,44 @@ func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 	}
 
 	dp := commandproxy.DialProxyCommand(scmd)
-	return bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
+	return bridge.DialFunc(func(ctx context.Context, network, address string) (net.Conn, error) {
 		proxy, err := dp.Format(network, address)
 		if err != nil {
 			return nil, err
 		}
-		return commandDialer.CommandDialContext(ctx, proxy[0], proxy[1:]...)
+		c, err := commandDialer.CommandDialContext(ctx, proxy[0], proxy[1:]...)
+		if err != nil {
+			return nil, err
+		}
+
+		wc := &warpConnAddress{
+			Conn: c,
+			localAddr: &net.TCPAddr{
+				IP: localIP,
+			},
+		}
+		remoteAddr, err := net.ResolveTCPAddr(network, address)
+		if err == nil {
+			wc.remoteAddr = remoteAddr
+		} else {
+			wc.remoteAddr = &net.TCPAddr{}
+		}
+		return wc, nil
 	}), nil
+}
+
+var localIP = net.ParseIP("127.0.0.1")
+
+type warpConnAddress struct {
+	net.Conn
+	localAddr  net.Addr
+	remoteAddr net.Addr
+}
+
+func (w *warpConnAddress) LocalAddr() net.Addr {
+	return w.localAddr
+}
+
+func (w *warpConnAddress) RemoteAddr() net.Addr {
+	return w.remoteAddr
 }
