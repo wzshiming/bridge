@@ -3,18 +3,39 @@ package local
 import (
 	"context"
 	"net"
+	"os"
+	"strings"
+
+	"github.com/wzshiming/bridge/internal/warp"
+	"github.com/wzshiming/commandproxy"
 )
 
-var LOCAL Local
-
-type Local struct{}
-
-func (Local) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
-	var dialer net.Dialer
-	return dialer.DialContext(ctx, network, address)
+var LOCAL = &Local{
+	LocalAddr: warp.NewNetAddr("local", "local"),
 }
 
-func (Local) Listen(ctx context.Context, network, address string) (net.Listener, error) {
-	var listenConfig net.ListenConfig
-	return listenConfig.Listen(ctx, network, address)
+type Local struct {
+	Dialer       net.Dialer
+	ListenConfig net.ListenConfig
+	LocalAddr    net.Addr
+}
+
+func (l *Local) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	return l.Dialer.DialContext(ctx, network, address)
+}
+
+func (l *Local) Listen(ctx context.Context, network, address string) (net.Listener, error) {
+	return l.ListenConfig.Listen(ctx, network, address)
+}
+
+func (l *Local) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {
+	proxy := commandproxy.ProxyCommand(ctx, name, args...)
+	proxy.Stderr = os.Stderr
+	conn, err := proxy.Stdio()
+	if err != nil {
+		return nil, err
+	}
+	remoteAddr := warp.NewNetAddr("cmd", strings.Join(append([]string{name}, args...), " "))
+	conn = warp.ConnWithAddr(conn, l.LocalAddr, remoteAddr)
+	return conn, nil
 }

@@ -7,8 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
-	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/wzshiming/anyproxy"
@@ -16,13 +16,13 @@ import (
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/internal/dump"
 	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/bridge/internal/pool"
+	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/bridge/local"
 	"github.com/wzshiming/commandproxy"
 )
 
-var ctx = context.Background()
-
-func Bridge(listens, dials []string, d bool) error {
+func Bridge(ctx context.Context, listens, dials []string, d bool) error {
 	log.Println(showChain(dials, listens))
 
 	var (
@@ -33,7 +33,7 @@ func Bridge(listens, dials []string, d bool) error {
 	dial := dials[0]
 	dials = dials[1:]
 	if len(dials) != 0 {
-		b, err := chain.Default.BridgeChain(nil, dials...)
+		b, err := chain.Default.BridgeChain(local.LOCAL, dials...)
 		if err != nil {
 			return err
 		}
@@ -52,13 +52,16 @@ func Bridge(listens, dials []string, d bool) error {
 		if d {
 			raw = dump.NewDumpReadWriteCloser(raw, true, "STDIO", dial)
 		}
-		step(ctx, dialer, raw, dial)
+		return step(ctx, dialer, raw, dial)
 	} else {
-		network, listen := resolveProtocol(listens[0])
+		network, listen, ok := scheme.SplitSchemeAddr(listens[0])
+		if !ok {
+			return fmt.Errorf("unsupported protocol format %q", listens[0])
+		}
 		listens = listens[1:]
 
 		if len(listens) != 0 {
-			d, err := chain.Default.BridgeChain(nil, listens...)
+			d, err := chain.Default.BridgeChain(local.LOCAL, listens...)
 			if err != nil {
 				return err
 			}
@@ -82,17 +85,17 @@ func Bridge(listens, dials []string, d bool) error {
 						return err
 					}
 					from := raw.RemoteAddr().String()
-					svc := anyproxy.NewAnyProxy(bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
+					svc := anyproxy.NewAnyProxy(ctx, bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
 						c, err = dialer.DialContext(ctx, network, address)
 						if err != nil {
 							return nil, err
 						}
 						return dump.NewDumpConn(c, false, from, address), nil
-					}), log.Std)
+					}), log.Std, pool.Bytes)
 					go svc.ServeConn(raw)
 				}
 			} else {
-				svc := anyproxy.NewAnyProxy(dialer, log.Std)
+				svc := anyproxy.NewAnyProxy(ctx, dialer, log.Std, pool.Bytes)
 				for {
 					raw, err := listener.Accept()
 					if err != nil {
@@ -110,43 +113,36 @@ func Bridge(listens, dials []string, d bool) error {
 				if d {
 					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), dial)
 				}
-				go step(ctx, dialer, raw, dial)
+				go stepIgnoreErr(ctx, dialer, raw, dial)
 			}
 		}
 	}
-	return nil
 }
 
-func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, addr string) {
+func stepIgnoreErr(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, addr string) {
+	err := step(ctx, dialer, raw, addr)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, addr string) error {
 	defer raw.Close()
-	network, address := resolveProtocol(addr)
+	network, address, ok := scheme.SplitSchemeAddr(addr)
+	if !ok {
+		return fmt.Errorf("unsupported protocol format %q", address)
+	}
 	conn, err := dialer.DialContext(ctx, network, address)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
-	defer conn.Close()
-
-	err = commandproxy.Tunnel(ctx, conn, raw)
-	if err != nil {
-		log.Println(err)
-	}
-}
-
-func resolveProtocol(addr string) (network, address string) {
-	network = "tcp"
-	u, err := url.Parse(addr)
-	if err != nil {
-		return network, addr
-	}
-	if u.Host == "" {
-		return network, addr
-	}
-	address = u.Host
-	if u.Scheme != "" {
-		network = u.Scheme
-	}
-	return network, address
+	buf1 := pool.Bytes.Get()
+	buf2 := pool.Bytes.Get()
+	defer func() {
+		pool.Bytes.Put(buf1)
+		pool.Bytes.Put(buf2)
+	}()
+	return commandproxy.Tunnel(ctx, conn, raw, buf1, buf2)
 }
 
 func showChain(dials, listens []string) string {
@@ -162,28 +158,18 @@ func showChain(dials, listens []string) string {
 func removeUserInfo(s []string) []string {
 	s = stringsClone(s)
 	for i := 0; i != len(s); i++ {
-		u, err := url.Parse(s[i])
-		if err != nil {
+		sch, addr, ok := scheme.SplitSchemeAddr(s[i])
+		if !ok {
 			continue
 		}
-
-		changeFlag := false
-		if u.User != nil {
-			u.User = nil
-			changeFlag = true
+		p, ok := scheme.JoinSchemeAddr(sch, addr)
+		if !ok {
+			continue
 		}
-		if u.ForceQuery {
-			u.ForceQuery = false
-			changeFlag = true
-		}
-		if u.RawQuery != "" {
-			u.RawQuery = ""
-			changeFlag = true
-		}
-
-		if changeFlag {
-			s[i] = u.String()
-		}
+		s[i] = p
+	}
+	for i := 0; i != len(s); i++ {
+		s[i] = strconv.Quote(s[i])
 	}
 	return s
 }

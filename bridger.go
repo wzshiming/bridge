@@ -24,10 +24,10 @@ type Dialer interface {
 }
 
 // DialFunc type is an adapter for Dialer.
-type DialFunc func(ctx context.Context, network, address string) (c net.Conn, err error)
+type DialFunc func(ctx context.Context, network, address string) (net.Conn, error)
 
 // DialContext calls d(ctx, network, address)
-func (d DialFunc) DialContext(ctx context.Context, network, address string) (c net.Conn, err error) {
+func (d DialFunc) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	return d(ctx, network, address)
 }
 
@@ -46,13 +46,13 @@ func (b BridgeFunc) Bridge(dialer Dialer, address string) (Dialer, error) {
 
 // CommandDialer contains options for connecting to an address with command.
 type CommandDialer interface {
-	CommandDialContext(ctx context.Context, name string, args ...string) (c net.Conn, err error)
+	CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error)
 }
 
 // CommandDialFunc type is an adapter for Dialer  with command.
-type CommandDialFunc func(ctx context.Context, name string, args ...string) (c net.Conn, err error)
+type CommandDialFunc func(ctx context.Context, name string, args ...string) (net.Conn, error)
 
 // CommandDialFunc calls d(ctx, name, args...)
-func (d CommandDialFunc) CommandDialContext(ctx context.Context, name string, args ...string) (c net.Conn, err error) {
+func (d CommandDialFunc) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {
 	return d(ctx, name, args...)
 }

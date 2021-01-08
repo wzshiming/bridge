@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/wzshiming/bridge"
+	"github.com/wzshiming/bridge/internal/warp"
 	"github.com/wzshiming/bridge/local"
 	"golang.org/x/crypto/ssh"
 )
@@ -25,32 +26,24 @@ func SSH(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	cli, err := newClient(dialer, host, config)
-	if err != nil {
-		return nil, err
-	}
-	return cli, nil
+	return &client{
+		localAddr: warp.NewNetAddr("ssh", host),
+		dialer:    dialer,
+		host:      host,
+		config:    config,
+	}, nil
 }
 
-type Client struct {
-	mut    sync.Mutex
-	dialer bridge.Dialer
-	sshCli *ssh.Client
-	host   string
-	config *ssh.ClientConfig
+type client struct {
+	mut       sync.Mutex
+	localAddr net.Addr
+	dialer    bridge.Dialer
+	sshCli    *ssh.Client
+	host      string
+	config    *ssh.ClientConfig
 }
 
-func newClient(dialer bridge.Dialer, host string, config *ssh.ClientConfig) (*Client, error) {
-	cli := &Client{
-		dialer: dialer,
-		host:   host,
-		config: config,
-	}
-	return cli, nil
-}
-
-func (c *Client) reset() {
+func (c *client) reset() {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 	if c.sshCli == nil {
@@ -59,7 +52,7 @@ func (c *Client) reset() {
 	c.sshCli.Close()
 	c.sshCli = nil
 }
-func (c *Client) getCli(ctx context.Context) (*ssh.Client, error) {
+func (c *client) getCli(ctx context.Context) (*ssh.Client, error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 	cli := c.sshCli
@@ -80,7 +73,7 @@ func (c *Client) getCli(ctx context.Context) (*ssh.Client, error) {
 	return cli, nil
 }
 
-func (c *Client) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {
+func (c *client) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {
 	cmd := make([]string, 0, len(args)+1)
 	cmd = append(cmd, name)
 	for _, arg := range args {
@@ -89,7 +82,7 @@ func (c *Client) CommandDialContext(ctx context.Context, name string, args ...st
 	return c.commandDialContext(ctx, strings.Join(cmd, " "), 1)
 }
 
-func (c *Client) commandDialContext(ctx context.Context, cmd string, retry int) (net.Conn, error) {
+func (c *client) commandDialContext(ctx context.Context, cmd string, retry int) (net.Conn, error) {
 	cli, err := c.getCli(ctx)
 	if err != nil {
 		return nil, err
@@ -114,15 +107,15 @@ func (c *Client) commandDialContext(ctx context.Context, cmd string, retry int) 
 		sess.Wait()
 		conn1.Close()
 	}()
-
+	conn2 = warp.ConnWithAddr(conn2, c.localAddr, warp.NewNetAddr("ssh-cmd", cmd))
 	return conn2, nil
 }
 
-func (c *Client) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+func (c *client) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	return c.dialContext(ctx, network, address, 1)
 }
 
-func (c *Client) dialContext(ctx context.Context, network, address string, retry int) (net.Conn, error) {
+func (c *client) dialContext(ctx context.Context, network, address string, retry int) (net.Conn, error) {
 	cli, err := c.getCli(ctx)
 	if err != nil {
 		return nil, err
@@ -138,7 +131,7 @@ func (c *Client) dialContext(ctx context.Context, network, address string, retry
 	return conn, nil
 }
 
-func (c *Client) Listen(ctx context.Context, network, address string) (net.Listener, error) {
+func (c *client) Listen(ctx context.Context, network, address string) (net.Listener, error) {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
@@ -149,7 +142,7 @@ func (c *Client) Listen(ctx context.Context, network, address string) (net.Liste
 	return c.listen(ctx, network, address, 1)
 }
 
-func (c *Client) listen(ctx context.Context, network, address string, retry int) (net.Listener, error) {
+func (c *client) listen(ctx context.Context, network, address string, retry int) (net.Listener, error) {
 	cli, err := c.getCli(ctx)
 	if err != nil {
 		return nil, err

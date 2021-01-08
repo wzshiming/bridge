@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"syscall"
 
 	_ "github.com/wzshiming/bridge/command"
 	_ "github.com/wzshiming/bridge/connect"
+	_ "github.com/wzshiming/bridge/netcat"
+	_ "github.com/wzshiming/bridge/shadowsocks"
 	_ "github.com/wzshiming/bridge/socks4"
 	_ "github.com/wzshiming/bridge/socks5"
 	_ "github.com/wzshiming/bridge/ssh"
@@ -15,6 +19,7 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge/bridge"
 	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/notify"
 )
 
 var (
@@ -27,9 +32,9 @@ const defaults = `Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5
 More information, please go to https://github.com/wzshiming/bridge
 
 Usage: bridge [-d] \
-	[-b=[[tcp://]bind_address]:bind_port \
+	[-b=[[(tcp://|unix://)]bind_address]:bind_port \
 	[-b=ssh://bridge_bind_address:bridge_bind_port [-b=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_bind_address:bridge_bind_port ...]]] \ // 
-	-p=([tcp://]proxy_address:proxy_port|-) \
+	-p=([(tcp://|unix://)]proxy_address:proxy_port|-) \
 	[-p=(socks4://|socks4a://|socks5://|socks5h://|https://|http://|ssh://|cmd:)bridge_proxy_address:bridge_proxy_port ...]
 `
 
@@ -46,7 +51,10 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
-	err := bridge.Bridge(listens, dials, dump)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	notify.OnSlice([]os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL}, cancel)
+	err := bridge.Bridge(ctx, listens, dials, dump)
 	if err != nil {
 		log.Fatalln(err)
 		return
