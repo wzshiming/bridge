@@ -14,6 +14,7 @@ import (
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
+	"github.com/wzshiming/bridge/internal/common"
 	"github.com/wzshiming/bridge/internal/dump"
 	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/internal/pool"
@@ -23,8 +24,6 @@ import (
 )
 
 func Bridge(ctx context.Context, listens, dials []string, d bool) error {
-	log.Println(showChain(dials, listens))
-
 	var (
 		dialer       bridge.Dialer       = local.LOCAL
 		listenConfig bridge.ListenConfig = local.LOCAL
@@ -76,13 +75,19 @@ func Bridge(ctx context.Context, listens, dials []string, d bool) error {
 		if err != nil {
 			return err
 		}
+		if ctx != context.Background() {
+			go func() {
+				<-ctx.Done()
+				listener.Close()
+			}()
+		}
 
 		if dial == "-" {
 			if d {
 				for {
 					raw, err := listener.Accept()
 					if err != nil {
-						return err
+						return ignoreClosedErr(err)
 					}
 					from := raw.RemoteAddr().String()
 					svc := anyproxy.NewAnyProxy(ctx, bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
@@ -99,7 +104,7 @@ func Bridge(ctx context.Context, listens, dials []string, d bool) error {
 				for {
 					raw, err := listener.Accept()
 					if err != nil {
-						return err
+						return ignoreClosedErr(err)
 					}
 					go svc.ServeConn(raw)
 				}
@@ -108,7 +113,7 @@ func Bridge(ctx context.Context, listens, dials []string, d bool) error {
 			for {
 				raw, err := listener.Accept()
 				if err != nil {
-					return err
+					return ignoreClosedErr(err)
 				}
 				if d {
 					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), dial)
@@ -119,9 +124,16 @@ func Bridge(ctx context.Context, listens, dials []string, d bool) error {
 	}
 }
 
+func ignoreClosedErr(err error) error {
+	if err != nil && err != io.EOF && err != io.ErrClosedPipe && !common.IsClosedConnError(err) {
+		return err
+	}
+	return nil
+}
+
 func stepIgnoreErr(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, addr string) {
 	err := step(ctx, dialer, raw, addr)
-	if err != nil {
+	if ignoreClosedErr(err) != nil {
 		log.Println(err)
 	}
 }
@@ -145,7 +157,7 @@ func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, add
 	return commandproxy.Tunnel(ctx, conn, raw, buf1, buf2)
 }
 
-func showChain(dials, listens []string) string {
+func ShowChain(dials, listens []string) string {
 	dials = removeUserInfo(dials)
 	listens = reverse(removeUserInfo(listens))
 

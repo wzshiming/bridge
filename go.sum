@@ -2,8 +2,8 @@ github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da h1:KjTM2ks9d14ZYCvmH
 github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da/go.mod h1:eHEWzANqSiWQsof+nXEI9bUVUyV6F53Fp89EuCh2EAA=
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
-github.com/wzshiming/anyproxy v0.2.0 h1:XJZ2CKNIXTIPrHV4gDcX1C7z+GQDRn9bjw5P5Z2zUIQ=
-github.com/wzshiming/anyproxy v0.2.0/go.mod h1:q+FjIanpYG1hhHT9dqIzwcdIo3Y5m4x9zKh/gOzGfm8=
+github.com/wzshiming/anyproxy v0.2.1 h1:ow9cdAd3SrAwDjSBiC0EORBn0VPjYZ2R/kS3/cj7xMg=
+github.com/wzshiming/anyproxy v0.2.1/go.mod h1:q+FjIanpYG1hhHT9dqIzwcdIo3Y5m4x9zKh/gOzGfm8=
 github.com/wzshiming/cmux v0.1.0 h1:MOsZjdVkcuptYBysE85x2ng/ajVSwwUfRLG6GL2IBNg=
 github.com/wzshiming/cmux v0.1.0/go.mod h1:B5bzinbIDlFcjtWhdEiEdMWMp41bbd2a7/ghkMuKTUI=
 github.com/wzshiming/commandproxy v0.2.0 h1:uPVhgIj2YSncRUo6g9smGR6OMzsIg7lwklcMHPPmEeM=
@@ -22,6 +22,8 @@ github.com/wzshiming/socks5 v0.2.2 h1:lD9SuwAO3ZuBuM8WHVAB5XSmiRl3c60nz4gcIAe0N8
 github.com/wzshiming/socks5 v0.2.2/go.mod h1:BvCAqlzocQN5xwLjBZDBbvWlrx8sCYSSbHEOf2wZgT0=
 github.com/wzshiming/trie v0.0.1 h1:6xnhRyO5tZWR6aKjEpFfm8KSNNHYsNbpKrY1+NdyHME=
 github.com/wzshiming/trie v0.0.1/go.mod h1:Z20IrQFTHnjWz//dssIoiEPWInBZFyuFlPOFPxV0Rec=
+github.com/xtaci/smux v1.5.15 h1:6hMiXswcleXj5oNfcJc+DXS8Vj36XX2LaX98udog6Kc=
+github.com/xtaci/smux v1.5.15/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
 golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad h1:DN0cp81fZ3njFcrLCytUHRSUkqBjfTo4Tx9RJTWs0EY=
 golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
 golang.org/x/net v0.0.0-20201224014010-6772e930b67b h1:iFwSg7t5GZmB/Q5TjiEAsdoLDrdJRC1RiF2WhuV29Qw=
