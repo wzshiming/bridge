@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 
 	flag "github.com/spf13/pflag"
@@ -11,6 +12,7 @@ import (
 	_ "github.com/wzshiming/bridge/command"
 	_ "github.com/wzshiming/bridge/connect"
 	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/bridge/internal/scheme"
 	_ "github.com/wzshiming/bridge/netcat"
 	_ "github.com/wzshiming/bridge/shadowsocks"
 	_ "github.com/wzshiming/bridge/smux"
@@ -57,6 +59,17 @@ func init() {
 }
 
 func main() {
+	if len(dials) > 0 && len(listens) > 0 && dials[0] == "-" {
+		proxies := strings.Split(listens[0], ",")
+		if len(proxies) == 1 {
+			network, address, _ := scheme.SplitSchemeAddr(proxies[0])
+			if network == "tcp" {
+				proxies = []string{"http://" + address, "socks5://" + address, "socks4://" + address}
+			}
+		}
+		listens[0] = strings.Join(proxies, ",")
+	}
+
 	log.Println(bridge.ShowChain(dials, listens))
 	err := bridge.Bridge(ctx, listens, dials, dump)
 	if err != nil {
