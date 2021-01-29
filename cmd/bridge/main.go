@@ -7,12 +7,8 @@ import (
 	"strings"
 	"syscall"
 
-	flag "github.com/spf13/pflag"
-	"github.com/wzshiming/bridge/bridge"
 	_ "github.com/wzshiming/bridge/command"
 	_ "github.com/wzshiming/bridge/connect"
-	"github.com/wzshiming/bridge/internal/log"
-	"github.com/wzshiming/bridge/internal/scheme"
 	_ "github.com/wzshiming/bridge/netcat"
 	_ "github.com/wzshiming/bridge/shadowsocks"
 	_ "github.com/wzshiming/bridge/smux"
@@ -21,6 +17,11 @@ import (
 	_ "github.com/wzshiming/bridge/ssh"
 	_ "github.com/wzshiming/bridge/tls"
 	_ "github.com/wzshiming/bridge/ws"
+
+	flag "github.com/spf13/pflag"
+	"github.com/wzshiming/bridge/bridge"
+	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/notify"
 )
 

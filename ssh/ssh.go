@@ -52,6 +52,7 @@ func (c *client) reset() {
 	c.sshCli.Close()
 	c.sshCli = nil
 }
+
 func (c *client) getCli(ctx context.Context) (*ssh.Client, error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
@@ -171,18 +172,18 @@ func config(addr string) (host string, config *ssh.ClientConfig, err error) {
 		user = ur.User.Username()
 		pwd, isPwd = ur.User.Password()
 	}
-	host = ur.Hostname()
-	port := ur.Port()
+
+	host, port, err := net.SplitHostPort(ur.Host)
+	if err != nil {
+		return "", nil, err
+	}
 	if port == "" {
 		port = "22"
 	}
-	host += ":" + port
 
 	config = &ssh.ClientConfig{
-		User: user,
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
-		},
+		User:            user,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	if isPwd {
@@ -211,5 +212,5 @@ func config(addr string) (host string, config *ssh.ClientConfig, err error) {
 		}
 		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 	}
-	return host, config, nil
+	return net.JoinHostPort(host, port), config, nil
 }
