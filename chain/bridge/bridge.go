@@ -14,13 +14,13 @@ import (
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
-	"github.com/wzshiming/bridge/internal/anyproxy"
 	"github.com/wzshiming/bridge/internal/common"
 	"github.com/wzshiming/bridge/internal/dump"
 	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/internal/pool"
 	"github.com/wzshiming/bridge/internal/scheme"
-	"github.com/wzshiming/bridge/local"
+	"github.com/wzshiming/bridge/multiple/proxy"
+	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/commandproxy"
 )
 
@@ -79,7 +79,7 @@ func Bridge(ctx context.Context, listens, dials []string, d bool) error {
 }
 
 func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listen string, dial string, d bool) error {
-	listens := strings.Split(listen, ",")
+	listens := strings.Split(listen, "|")
 	listeners := []net.Listener{}
 	for _, l := range listens {
 		network, listen, ok := scheme.SplitSchemeAddr(l)
@@ -127,8 +127,8 @@ func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bri
 }
 
 func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listen string, d bool) error {
-	listens := strings.Split(listen, ",")
-	svc, err := anyproxy.NewAnyProxy(ctx, listens, dialer)
+	listens := strings.Split(listen, "|")
+	svc, err := proxy.NewProxy(ctx, listens, dialer)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 						}
 						return dump.NewDumpConn(c, false, raw.RemoteAddr().String(), address), nil
 					})
-					svc, err := anyproxy.NewAnyProxy(ctx, listens, dial)
+					svc, err := proxy.NewProxy(ctx, listens, dial)
 					if err != nil {
 						log.Println(err)
 						return
@@ -236,7 +236,7 @@ func ShowChain(dials, listens []string) string {
 func removeUserInfo(addresses []string) []string {
 	addresses = stringsClone(addresses)
 	for i := 0; i != len(addresses); i++ {
-		address := strings.Split(addresses[i], ",")
+		address := strings.Split(addresses[i], "|")
 		for j := 0; j != len(address); j++ {
 			sch, addr, ok := scheme.SplitSchemeAddr(address[j])
 			if !ok {
@@ -248,7 +248,7 @@ func removeUserInfo(addresses []string) []string {
 			}
 			address[j] = p
 		}
-		addresses[i] = strings.Join(address, ",")
+		addresses[i] = strings.Join(address, "|")
 	}
 	for i := 0; i != len(addresses); i++ {
 		addresses[i] = strconv.Quote(addresses[i])

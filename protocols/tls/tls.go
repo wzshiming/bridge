@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/local"
+	"github.com/wzshiming/bridge/protocols/local"
 )
 
 // TLS tls:[opaque]

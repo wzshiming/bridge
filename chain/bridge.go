@@ -2,9 +2,11 @@ package chain
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/internal/scheme"
+	"github.com/wzshiming/bridge/multiple/lb"
 )
 
 // BridgeChain is a bridger that supports multiple crossing of bridger.
@@ -35,15 +37,26 @@ func (b *BridgeChain) BridgeChain(dialer bridge.Dialer, addresses ...string) (br
 }
 
 func (b *BridgeChain) bridge(dialer bridge.Dialer, address string) (bridge.Dialer, error) {
-	sch, _, ok := scheme.SplitSchemeAddr(address)
-	if !ok {
-		return nil, fmt.Errorf("unsupported protocol format %q", address)
+	addresses := strings.Split(address, "|")
+	dialers := make([]bridge.Dialer, 0, len(addresses))
+	for _, address := range addresses {
+		sch, _, ok := scheme.SplitSchemeAddr(address)
+		if !ok {
+			return nil, fmt.Errorf("unsupported protocol format %q", address)
+		}
+		bridger, ok := b.proto[sch]
+		if !ok {
+			return nil, fmt.Errorf("unsupported protocol %q", sch)
+		}
+
+		dial, err := bridger.Bridge(dialer, address)
+		if err != nil {
+			return nil, err
+		}
+
+		dialers = append(dialers, dial)
 	}
-	dial, ok := b.proto[sch]
-	if !ok {
-		return nil, fmt.Errorf("unsupported protocol %q", sch)
-	}
-	return dial.Bridge(dialer, address)
+	return lb.NewDialer(dialers), nil
 }
 
 // Register is register a new bridger for BridgeChain.

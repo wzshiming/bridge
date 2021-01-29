@@ -7,19 +7,19 @@ import (
 	"strings"
 	"syscall"
 
-	_ "github.com/wzshiming/bridge/command"
-	_ "github.com/wzshiming/bridge/connect"
-	_ "github.com/wzshiming/bridge/netcat"
-	_ "github.com/wzshiming/bridge/shadowsocks"
-	_ "github.com/wzshiming/bridge/smux"
-	_ "github.com/wzshiming/bridge/socks4"
-	_ "github.com/wzshiming/bridge/socks5"
-	_ "github.com/wzshiming/bridge/ssh"
-	_ "github.com/wzshiming/bridge/tls"
-	_ "github.com/wzshiming/bridge/ws"
+	_ "github.com/wzshiming/bridge/protocols/command"
+	_ "github.com/wzshiming/bridge/protocols/connect"
+	_ "github.com/wzshiming/bridge/protocols/netcat"
+	_ "github.com/wzshiming/bridge/protocols/shadowsocks"
+	_ "github.com/wzshiming/bridge/protocols/smux"
+	_ "github.com/wzshiming/bridge/protocols/socks4"
+	_ "github.com/wzshiming/bridge/protocols/socks5"
+	_ "github.com/wzshiming/bridge/protocols/ssh"
+	_ "github.com/wzshiming/bridge/protocols/tls"
+	_ "github.com/wzshiming/bridge/protocols/ws"
 
 	flag "github.com/spf13/pflag"
-	"github.com/wzshiming/bridge/bridge"
+	"github.com/wzshiming/bridge/chain/bridge"
 	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/notify"
@@ -61,14 +61,14 @@ func init() {
 
 func main() {
 	if len(dials) > 0 && len(listens) > 0 && dials[0] == "-" {
-		proxies := strings.Split(listens[0], ",")
+		proxies := strings.Split(listens[0], "|")
 		if len(proxies) == 1 {
 			network, address, _ := scheme.SplitSchemeAddr(proxies[0])
 			if network == "tcp" {
 				proxies = []string{"http://" + address, "socks5://" + address, "socks4://" + address}
 			}
 		}
-		listens[0] = strings.Join(proxies, ",")
+		listens[0] = strings.Join(proxies, "|")
 	}
 
 	log.Println(bridge.ShowChain(dials, listens))

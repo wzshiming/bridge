@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/local"
+	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/commandproxy"
 	"golang.org/x/net/websocket"
 )

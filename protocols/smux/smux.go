@@ -5,14 +5,22 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/internal/log"
-	"github.com/wzshiming/bridge/local"
+	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/xtaci/smux"
 )
 
-var conf = smux.DefaultConfig()
+var conf = &smux.Config{
+	Version:           2,
+	KeepAliveInterval: 10 * time.Second,
+	KeepAliveTimeout:  30 * time.Second,
+	MaxFrameSize:      32768,
+	MaxReceiveBuffer:  4194304,
+	MaxStreamBuffer:   65536,
+}
 
 func SMux(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {

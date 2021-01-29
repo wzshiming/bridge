@@ -1,4 +1,4 @@
-package anyproxy
+package proxy
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 	"github.com/wzshiming/cmux"
 )
 
-type AnyProxy struct {
+type Proxy struct {
 	proxies map[string]*Host
 }
 
-func NewAnyProxy(ctx context.Context, addrs []string, dial bridge.Dialer) (*AnyProxy, error) {
+func NewProxy(ctx context.Context, addrs []string, dial bridge.Dialer) (*Proxy, error) {
 	proxies := map[string]*Host{}
 	for _, addr := range addrs {
 		u, err := url.Parse(addr)
@@ -51,17 +51,17 @@ func NewAnyProxy(ctx context.Context, addrs []string, dial bridge.Dialer) (*AnyP
 		}
 		proxies[u.Host] = mux
 	}
-	proxy := &AnyProxy{
+	proxy := &Proxy{
 		proxies: proxies,
 	}
 	return proxy, nil
 }
 
-func (s *AnyProxy) Match(addr string) *Host {
+func (s *Proxy) Match(addr string) *Host {
 	return s.proxies[addr]
 }
 
-func (s *AnyProxy) Hosts() []string {
+func (s *Proxy) Hosts() []string {
 	hosts := make([]string, 0, len(s.proxies))
 	for proxy := range s.proxies {
 		hosts = append(hosts, proxy)

@@ -2,7 +2,7 @@ package shadowsocks
 
 import (
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/local"
+	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/shadowsocks"
 	_ "github.com/wzshiming/shadowsocks/init"
 )

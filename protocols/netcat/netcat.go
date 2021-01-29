@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/command"
-	"github.com/wzshiming/bridge/local"
+	"github.com/wzshiming/bridge/protocols/command"
+	"github.com/wzshiming/bridge/protocols/local"
 )
 
 // NetCat nc: [prefix]

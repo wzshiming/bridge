@@ -1,4 +1,4 @@
-package anyproxy
+package proxy
 
 import (
 	"bufio"

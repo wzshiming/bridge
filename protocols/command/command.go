@@ -11,7 +11,7 @@ import (
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/internal/warp"
-	"github.com/wzshiming/bridge/local"
+	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/cmux"
 	"github.com/wzshiming/commandproxy"
 )
