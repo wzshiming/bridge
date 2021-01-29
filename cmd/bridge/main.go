@@ -55,7 +55,7 @@ func init() {
 
 	var cancel func()
 	ctx, cancel = context.WithCancel(context.Background())
-	notify.OnSlice([]os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL}, cancel)
+	notify.On(cancel, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
 }
 
 func main() {
