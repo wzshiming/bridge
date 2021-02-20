@@ -19,7 +19,7 @@ import (
 	_ "github.com/wzshiming/bridge/protocols/ws"
 
 	flag "github.com/spf13/pflag"
-	"github.com/wzshiming/bridge/chain/bridge"
+	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/notify"
@@ -71,8 +71,8 @@ func main() {
 		listens[0] = strings.Join(proxies, "|")
 	}
 
-	log.Println(bridge.ShowChain(dials, listens))
-	err := bridge.Bridge(ctx, listens, dials, dump)
+	log.Println(chain.ShowChain(dials, listens))
+	err := chain.Bridge(ctx, listens, dials, dump)
 	if err != nil {
 		log.Println(err)
 	}
