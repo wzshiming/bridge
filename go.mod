@@ -3,6 +3,7 @@ module github.com/wzshiming/bridge
 go 1.15
 
 require (
+	github.com/Microsoft/go-winio v0.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/wzshiming/cmux v0.1.1
 	github.com/wzshiming/commandproxy v0.2.0

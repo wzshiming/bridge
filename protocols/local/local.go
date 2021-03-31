@@ -6,17 +6,20 @@ import (
 	"os"
 	"strings"
 
+	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/internal/warp"
 	"github.com/wzshiming/commandproxy"
 )
 
 var LOCAL = &Local{
-	LocalAddr: warp.NewNetAddr("local", "local"),
+	Dialer:       &net.Dialer{},
+	ListenConfig: &net.ListenConfig{},
+	LocalAddr:    warp.NewNetAddr("local", "local"),
 }
 
 type Local struct {
-	Dialer       net.Dialer
-	ListenConfig net.ListenConfig
+	Dialer       bridge.Dialer
+	ListenConfig bridge.ListenConfig
 	LocalAddr    net.Addr
 }
 
