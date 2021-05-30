@@ -52,7 +52,7 @@ type CommandDialer interface {
 // CommandDialFunc type is an adapter for Dialer  with command.
 type CommandDialFunc func(ctx context.Context, name string, args ...string) (net.Conn, error)
 
-// CommandDialFunc calls d(ctx, name, args...)
+// CommandDialContext calls d(ctx, name, args...)
 func (d CommandDialFunc) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {
 	return d(ctx, name, args...)
 }
