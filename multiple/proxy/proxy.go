@@ -8,6 +8,7 @@ import (
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/cmux"
+	"github.com/wzshiming/cmux/pattern"
 )
 
 type Proxy struct {
@@ -42,8 +43,8 @@ func NewProxy(ctx context.Context, addrs []string, dial bridge.Dialer) (*Proxy, 
 			}
 		} else {
 			mux.proxies = append(mux.proxies, s.ProxyURL())
-			for _, pattern := range patterns {
-				err = mux.cmux.HandleRegexp(pattern, s)
+			for _, p := range patterns {
+				err = mux.cmux.HandlePrefix(s, pattern.Pattern[p]...)
 				if err != nil {
 					return nil, err
 				}

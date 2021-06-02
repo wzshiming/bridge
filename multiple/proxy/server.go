@@ -43,7 +43,7 @@ func newServer(ctx context.Context, addr string, dial bridge.Dialer) (*warpPatte
 		s.Logger = log.Std
 		s.ProxyDial = dial.DialContext
 		s.BytesPool = pool.Bytes
-		return newWarpPatternServer(s, []string{pattern.Socks4}), nil
+		return newWarpPatternServer(s, []string{pattern.SOCKS4}), nil
 	case "socks5", "socks5h":
 		s, err := socks5.NewSimpleServer(addr)
 		if err != nil {
@@ -53,7 +53,7 @@ func newServer(ctx context.Context, addr string, dial bridge.Dialer) (*warpPatte
 		s.Logger = log.Std
 		s.ProxyDial = dial.DialContext
 		s.BytesPool = pool.Bytes
-		return newWarpPatternServer(s, []string{pattern.Socks5}), nil
+		return newWarpPatternServer(s, []string{pattern.SOCKS5}), nil
 	case "ss", "shadowsocks":
 		s, err := shadowsocks.NewSimpleServer(addr)
 		if err != nil {

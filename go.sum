@@ -9,12 +9,10 @@ github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-github.com/wzshiming/cmux v0.1.1 h1:njiTsaiG2Fz1B3n9mpLxCS9vGI4EQWSAlpBO71aRHYU=
-github.com/wzshiming/cmux v0.1.1/go.mod h1:B5bzinbIDlFcjtWhdEiEdMWMp41bbd2a7/ghkMuKTUI=
+github.com/wzshiming/cmux v0.2.2 h1:U6IH96kRFxnnjy3duskHvp237o8cK6gILQYIROE3NI4=
+github.com/wzshiming/cmux v0.2.2/go.mod h1:Vgdbl+BdSp0X3zHw3P+XW4sxyorR5y9NiKjRGRRnJdo=
 github.com/wzshiming/commandproxy v0.2.0 h1:uPVhgIj2YSncRUo6g9smGR6OMzsIg7lwklcMHPPmEeM=
 github.com/wzshiming/commandproxy v0.2.0/go.mod h1:wS6+aJ9KMHciqYX3xmDO0W+QVY0zvngeBvmoIFMfq8A=
-github.com/wzshiming/crun v0.3.3 h1:Vy3kp+KKfNnkxM+thmiv6HkSsviupMZEI31HtoVZpeY=
-github.com/wzshiming/crun v0.3.3/go.mod h1:iYiD/hU/91oBohiLF/F5nGoLlDsHCnp1FCh8WozXayk=
 github.com/wzshiming/httpproxy v0.3.4 h1:HpDmF0jQv83zMtMSJgd2CA41OlX98yNMJDnHnZPOXKY=
 github.com/wzshiming/httpproxy v0.3.4/go.mod h1:drZR+iQLfYsQi7/nETLjyB9Z0f5KDXQo2PEkJBbg3xQ=
 github.com/wzshiming/notify v0.1.0 h1:BZND3IfiWkyDseAiaqLb43mTU8vefmmK0gOdnuschPI=
@@ -37,7 +35,6 @@ golang.org/x/net v0.0.0-20201224014010-6772e930b67b h1:iFwSg7t5GZmB/Q5TjiEAsdoLD
 golang.org/x/net v0.0.0-20201224014010-6772e930b67b/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20191026070338-33540a1f6037/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 h1:nxC68pudNYkKU6jWhgrqdreuFiOQWj1Fs7T3VrH4Pjw=
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c h1:VwygUrnw9jn88c4u8GD3rZQbqrP/tgas88tPUbBxQrk=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
