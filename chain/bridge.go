@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/config"
 	"github.com/wzshiming/bridge/internal/common"
@@ -20,7 +21,6 @@ import (
 	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/internal/pool"
 	"github.com/wzshiming/bridge/internal/scheme"
-	"github.com/wzshiming/bridge/multiple/proxy"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/commandproxy"
 )
@@ -136,7 +136,7 @@ func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bri
 }
 
 func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, d bool) error {
-	svc, err := proxy.NewProxy(ctx, listens, dialer)
+	svc, err := anyproxy.NewAnyProxy(ctx, listens, dialer, log.Std, pool.Bytes)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 						}
 						return dump.NewDumpConn(c, false, raw.RemoteAddr().String(), address), nil
 					})
-					svc, err := proxy.NewProxy(ctx, listens, dial)
+					svc, err := anyproxy.NewAnyProxy(ctx, listens, dial, log.Std, pool.Bytes)
 					if err != nil {
 						log.Println(err)
 						return
