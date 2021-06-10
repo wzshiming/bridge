@@ -11,7 +11,7 @@ require (
 	github.com/wzshiming/httpproxy v0.3.4
 	github.com/wzshiming/notify v0.1.0
 	github.com/wzshiming/schedialer v0.1.1
-	github.com/wzshiming/shadowsocks v0.2.0
+	github.com/wzshiming/shadowsocks v0.2.1
 	github.com/wzshiming/socks4 v0.2.3
 	github.com/wzshiming/socks5 v0.2.3
 	github.com/xtaci/smux v1.5.15
