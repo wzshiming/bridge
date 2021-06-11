@@ -1,6 +1,6 @@
 module github.com/wzshiming/bridge
 
-go 1.15
+go 1.16
 
 require (
 	github.com/Microsoft/go-winio v0.5.0
@@ -9,6 +9,7 @@ require (
 	github.com/wzshiming/commandproxy v0.2.0
 	github.com/wzshiming/httpproxy v0.3.4
 	github.com/wzshiming/notify v0.1.0
+	github.com/wzshiming/schedialer v0.1.1
 	github.com/wzshiming/shadowsocks v0.2.0
 	github.com/wzshiming/socks4 v0.2.3
 	github.com/wzshiming/socks5 v0.2.3

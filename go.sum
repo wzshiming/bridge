@@ -17,6 +17,8 @@ github.com/wzshiming/httpproxy v0.3.4 h1:HpDmF0jQv83zMtMSJgd2CA41OlX98yNMJDnHnZP
 github.com/wzshiming/httpproxy v0.3.4/go.mod h1:drZR+iQLfYsQi7/nETLjyB9Z0f5KDXQo2PEkJBbg3xQ=
 github.com/wzshiming/notify v0.1.0 h1:BZND3IfiWkyDseAiaqLb43mTU8vefmmK0gOdnuschPI=
 github.com/wzshiming/notify v0.1.0/go.mod h1:SFhsQKZJznzsDcj/Qfo9A65k5IRcpUrpgbLRzZEa/DI=
+github.com/wzshiming/schedialer v0.1.1 h1:ozkPD0tiEDTj62SGq/tqyE9IpAmA51d3GCFTTZf0JxE=
+github.com/wzshiming/schedialer v0.1.1/go.mod h1:TvVxg4QZIBTJzRfmL/G7g6CzynFQKPmtXtSeJ2c4Lus=
 github.com/wzshiming/shadowsocks v0.2.0 h1:x85do3vEmh2/V/sRtaf6CS1shBJX5hQuXsReOeDI/7Y=
 github.com/wzshiming/shadowsocks v0.2.0/go.mod h1:56WQwfUpgC/HMhZFNOVTBCP9nbMvL5rAepKRIkSKPsg=
 github.com/wzshiming/socks4 v0.2.3 h1:H22IqBxSlWkXC6pZIN9y3ftqhc99TObRSjZQHKdtHqc=
