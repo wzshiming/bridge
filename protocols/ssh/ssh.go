@@ -173,14 +173,6 @@ func config(addr string) (host string, config *ssh.ClientConfig, err error) {
 		pwd, isPwd = ur.User.Password()
 	}
 
-	host, port, err := net.SplitHostPort(ur.Host)
-	if err != nil {
-		return "", nil, err
-	}
-	if port == "" {
-		port = "22"
-	}
-
 	config = &ssh.ClientConfig{
 		User:            user,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
@@ -211,6 +203,12 @@ func config(addr string) (host string, config *ssh.ClientConfig, err error) {
 			return "", nil, err
 		}
 		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
+	}
+
+	host = ur.Hostname()
+	port := ur.Port()
+	if port == "" {
+		port = "22"
 	}
 	return net.JoinHostPort(host, port), config, nil
 }
