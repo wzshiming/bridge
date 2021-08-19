@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -73,7 +74,7 @@ func (b *BridgeChain) dialMulti(dialer bridge.Dialer, addresses []string, plugin
 	if len(addresses) == 1 {
 		return b.dialOne(dialer, addresses[0])
 	}
-
+	ctx := context.Background()
 	plugin := schedialer.NewPlugins(plugins...)
 	for _, address := range addresses {
 		dial, err := b.dialOne(dialer, address)
@@ -84,7 +85,7 @@ func (b *BridgeChain) dialMulti(dialer bridge.Dialer, addresses []string, plugin
 			Name:   address,
 			Dialer: dial,
 		}
-		plugin.AddProxy(&proxy)
+		plugin.AddProxy(ctx, &proxy)
 	}
 	return schedialer.NewSchedialer(plugin), nil
 }
