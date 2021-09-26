@@ -104,10 +104,26 @@ func (c *client) commandDialContext(ctx context.Context, cmd string, retry int) 
 		}
 		return nil, err
 	}
+	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		sess.Wait()
+		cancel()
+	}()
+	go func() {
+		<-ctx.Done()
+
+		// openssh does not support the signal
+		// command and will not signal remote processes. This may
+		// be resolved in openssh 7.9 or higher. Please subscribe
+		// to https://github.com/golang/go/issues/16597.
+		sess.Signal(ssh.SIGKILL)
+		sess.Close()
 		conn1.Close()
 	}()
+	conn2 = warp.ConnWithCloser(conn2, func() error {
+		cancel()
+		return nil
+	})
 	conn2 = warp.ConnWithAddr(conn2, c.localAddr, warp.NewNetAddr("ssh-cmd", cmd))
 	return conn2, nil
 }

@@ -4,6 +4,19 @@ import (
 	"net"
 )
 
+func ConnWithCloser(conn net.Conn, closer func() error) net.Conn {
+	return &connCloser{Conn: conn, closer: closer}
+}
+
+type connCloser struct {
+	net.Conn
+	closer func() error
+}
+
+func (w *connCloser) Close() error {
+	return w.closer()
+}
+
 func ConnWithAddr(conn net.Conn, localAddr, remoteAddr net.Addr) net.Conn {
 	return &connAddr{Conn: conn, localAddr: localAddr, remoteAddr: remoteAddr}
 }
