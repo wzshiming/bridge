@@ -95,7 +95,7 @@ func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bri
 		if !ok {
 			return fmt.Errorf("unsupported protocol format %q", l)
 		}
-		listener, err := listenConfig.Listen(ctx, network, listen)
+		listener, err := common.Listen(ctx, listenConfig, network, listen)
 		if err != nil {
 			return err
 		}
@@ -143,7 +143,7 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 	hosts := svc.Hosts()
 	listeners := []net.Listener{}
 	for _, listen := range hosts {
-		listener, err := listenConfig.Listen(ctx, "tcp", listen)
+		listener, err := common.Listen(ctx, listenConfig, "tcp", listen)
 		if err != nil {
 			return err
 		}
@@ -177,7 +177,7 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 					// In dubug mode, need to know the address of the client.
 					// Because it is debug, performance is not considered here.
 					dial := bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
-						c, err = dialer.DialContext(ctx, network, address)
+						c, err = common.Dial(ctx, dialer, network, address)
 						if err != nil {
 							return nil, err
 						}
@@ -223,7 +223,8 @@ func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, dia
 	if !ok {
 		return fmt.Errorf("unsupported protocol format %q", address)
 	}
-	conn, err := dialer.DialContext(ctx, network, address)
+
+	conn, err := common.Dial(ctx, dialer, network, address)
 	if err != nil {
 		return err
 	}

@@ -1,11 +1,16 @@
 package common
 
 import (
+	"context"
+	"fmt"
 	"net"
 	"os"
 	"reflect"
 	"runtime"
 	"strings"
+
+	"github.com/wzshiming/bridge"
+	"github.com/wzshiming/commandproxy"
 )
 
 // IsClosedConnError reports whether err is an error from use of a closed
@@ -39,4 +44,34 @@ func errno(v error) uintptr {
 		return uintptr(rv.Uint())
 	}
 	return 0
+}
+
+func Dial(ctx context.Context, dialer bridge.Dialer, network, address string) (net.Conn, error) {
+	if network == "cmd" || network == "command" {
+		d, ok := dialer.(bridge.CommandDialer)
+		if !ok {
+			return nil, fmt.Errorf("protocol %q unsupported cmd %q", network, address)
+		}
+		cmd, err := commandproxy.SplitCommand(address)
+		if err != nil {
+			return nil, err
+		}
+		return d.CommandDialContext(ctx, cmd[0], cmd[1:]...)
+	}
+	return dialer.DialContext(ctx, network, address)
+}
+
+func Listen(ctx context.Context, listener bridge.ListenConfig, network, address string) (net.Listener, error) {
+	if network == "cmd" || network == "command" {
+		l, ok := listener.(bridge.CommandListenConfig)
+		if !ok {
+			return nil, fmt.Errorf("protocol %q unsupported cmd %q", network, address)
+		}
+		cmd, err := commandproxy.SplitCommand(address)
+		if err != nil {
+			return nil, err
+		}
+		return l.CommandListen(ctx, cmd[0], cmd[1:]...)
+	}
+	return listener.Listen(ctx, network, address)
 }

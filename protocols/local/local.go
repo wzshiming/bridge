@@ -42,3 +42,9 @@ func (l *Local) CommandDialContext(ctx context.Context, name string, args ...str
 	conn = warp.ConnWithAddr(conn, l.LocalAddr, remoteAddr)
 	return conn, nil
 }
+
+func (l *Local) CommandListen(ctx context.Context, name string, args ...string) (net.Listener, error) {
+	proxy := append([]string{name}, args...)
+	remoteAddr := warp.NewNetAddr("cmd", strings.Join(proxy, " "))
+	return warp.NewCommandListener(ctx, l, l.LocalAddr, remoteAddr, proxy)
+}
