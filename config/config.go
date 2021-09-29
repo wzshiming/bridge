@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -105,7 +104,7 @@ func (m Node) MarshalJSON() ([]byte, error) {
 
 func (m *Node) UnmarshalJSON(data []byte) error {
 	if m == nil {
-		return errors.New("node: UnmarshalJSON on nil pointer")
+		return fmt.Errorf("node: UnmarshalJSON on nil pointer")
 	}
 	if len(data) > 0 {
 		switch data[0] {

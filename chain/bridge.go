@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -68,7 +67,7 @@ func BridgeWithConfig(ctx context.Context, chain config.Chain, d bool) error {
 		}
 		l, ok := d.(bridge.ListenConfig)
 		if !ok || l == nil {
-			return errors.New("the last proxy could not listen")
+			return fmt.Errorf("the last proxy could not listen")
 		}
 		listenConfig = l
 	}

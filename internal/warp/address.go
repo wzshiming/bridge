@@ -2,7 +2,7 @@ package warp
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrConnClosed = errors.New("use of closed network connection")
+	ErrConnClosed = fmt.Errorf("use of closed network connection")
 )
 
 func ConnWithCloser(conn net.Conn, closer func() error) net.Conn {
