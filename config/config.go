@@ -46,7 +46,7 @@ func LoadConfigWithArgs(listens []string, dials []string) ([]Chain, error) {
 }
 
 func anyProxy(address string) []string {
-	return []string{"http://" + address, "socks5://" + address, "socks4://" + address}
+	return []string{"http://" + address, "socks5://" + address, "socks4://" + address, "ssh://" + address}
 }
 
 func LoadConfig(configs ...string) ([]Chain, error) {
