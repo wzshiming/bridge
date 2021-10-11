@@ -19,3 +19,7 @@ jobs:
       uses: wzshiming/action-upload-release-assets@v1
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Log into registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Upload Release Images
+      uses: wzshiming/action-upload-release-images@v1
