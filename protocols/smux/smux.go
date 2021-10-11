@@ -39,6 +39,10 @@ type sMux struct {
 
 func (m *sMux) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	if m.sess == nil || m.sess.IsClosed() {
+		if m.sess != nil {
+			m.sess.Close()
+			m.sess = nil
+		}
 		conn, err := m.dialer.DialContext(ctx, network, address)
 		if err != nil {
 			return nil, err
@@ -52,6 +56,7 @@ func (m *sMux) DialContext(ctx context.Context, network, address string) (net.Co
 	conn, err := m.sess.OpenStream()
 	if err != nil {
 		m.sess.Close()
+		m.sess = nil
 		return m.DialContext(ctx, network, address)
 	}
 	return conn, nil
