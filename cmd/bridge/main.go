@@ -18,6 +18,7 @@ import (
 	_ "github.com/wzshiming/bridge/protocols/ssh"
 	_ "github.com/wzshiming/bridge/protocols/tls"
 	_ "github.com/wzshiming/bridge/protocols/ws"
+	_ "github.com/wzshiming/bridge/protocols/zstd"
 
 	_ "github.com/wzshiming/anyproxy/proxies/httpproxy"
 	_ "github.com/wzshiming/anyproxy/proxies/shadowsocks"
