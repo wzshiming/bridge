@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/Microsoft/go-winio v0.5.0
 	github.com/spf13/pflag v1.0.5
-	github.com/wzshiming/anyproxy v0.5.1
+	github.com/wzshiming/anyproxy v0.5.2
 	github.com/wzshiming/cmux v0.2.2
 	github.com/wzshiming/commandproxy v0.2.0
 	github.com/wzshiming/httpproxy v0.4.1
@@ -13,7 +13,7 @@ require (
 	github.com/wzshiming/schedialer v0.2.1
 	github.com/wzshiming/shadowsocks v0.3.1
 	github.com/wzshiming/socks4 v0.3.1
-	github.com/wzshiming/socks5 v0.3.1
+	github.com/wzshiming/socks5 v0.4.0
 	github.com/wzshiming/sshproxy v0.1.2
 	github.com/xtaci/smux v1.5.16
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110

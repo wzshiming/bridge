@@ -10,8 +10,8 @@ github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-github.com/wzshiming/anyproxy v0.5.1 h1:JblBN9m0tLyv1LPGHdiUqrRz4U0b9k5P1S4mKKeTGbY=
-github.com/wzshiming/anyproxy v0.5.1/go.mod h1:WR7H6fvIu24178Lc5if5u4X0qmyPw8CbO2W06uftID0=
+github.com/wzshiming/anyproxy v0.5.2 h1:ov1EWF5iaEUF42uUM5l/cfjF0h15pcGUAdqUYnKlc/Q=
+github.com/wzshiming/anyproxy v0.5.2/go.mod h1:jeZ7v0ABj/K3a0HGCvZfFKU+ulckhA9keV70c2RCo/Q=
 github.com/wzshiming/cmux v0.2.2 h1:U6IH96kRFxnnjy3duskHvp237o8cK6gILQYIROE3NI4=
 github.com/wzshiming/cmux v0.2.2/go.mod h1:Vgdbl+BdSp0X3zHw3P+XW4sxyorR5y9NiKjRGRRnJdo=
 github.com/wzshiming/commandproxy v0.2.0 h1:uPVhgIj2YSncRUo6g9smGR6OMzsIg7lwklcMHPPmEeM=
@@ -26,8 +26,8 @@ github.com/wzshiming/shadowsocks v0.3.1 h1:K35RBGrn8OM1XwvpWOCeHGsbb0ZpQTOuBCO4G
 github.com/wzshiming/shadowsocks v0.3.1/go.mod h1:56WQwfUpgC/HMhZFNOVTBCP9nbMvL5rAepKRIkSKPsg=
 github.com/wzshiming/socks4 v0.3.1 h1:1QiCztWWvD5o+VQlpNKrkK1qM8NC2mo6LoeEJc1zUuY=
 github.com/wzshiming/socks4 v0.3.1/go.mod h1:YEPfhjf/4JezwdTmgXZU+UX+A2KvD05quzhsUBVMNA0=
-github.com/wzshiming/socks5 v0.3.1 h1:/cLISpU9TsbM8oMskJ8WY1vfkNYu1Q3UbSmwY8JFl3Y=
-github.com/wzshiming/socks5 v0.3.1/go.mod h1:BvCAqlzocQN5xwLjBZDBbvWlrx8sCYSSbHEOf2wZgT0=
+github.com/wzshiming/socks5 v0.4.0 h1:2XCLf91ReMn/ieDK/esCxbO8l68/AfX5YX9kE/VZ4rA=
+github.com/wzshiming/socks5 v0.4.0/go.mod h1:BvCAqlzocQN5xwLjBZDBbvWlrx8sCYSSbHEOf2wZgT0=
 github.com/wzshiming/sshd v0.1.0 h1:qwayh3xmWl9rKnrPQKjKDfuIO8idFdMOYno8y1WVgcc=
 github.com/wzshiming/sshd v0.1.0/go.mod h1:1sQ9cDYmq9xyRQbGh8OB9186sJXLRW8qlPkiADMn5iU=
 github.com/wzshiming/sshproxy v0.1.2 h1:svtCcWg7k8GYs8RHG9XK6ZQ7XsElK7jV73xpN3N/37Q=
