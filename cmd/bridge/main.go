@@ -13,6 +13,7 @@ import (
 	_ "github.com/wzshiming/bridge/protocols/netcat"
 	_ "github.com/wzshiming/bridge/protocols/shadowsocks"
 	_ "github.com/wzshiming/bridge/protocols/smux"
+	_ "github.com/wzshiming/bridge/protocols/snappy"
 	_ "github.com/wzshiming/bridge/protocols/socks4"
 	_ "github.com/wzshiming/bridge/protocols/socks5"
 	_ "github.com/wzshiming/bridge/protocols/ssh"
