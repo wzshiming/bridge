@@ -38,6 +38,8 @@ type sMux struct {
 }
 
 func (m *sMux) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if m.sess == nil || m.sess.IsClosed() {
 		if m.sess != nil {
 			m.sess.Close()
