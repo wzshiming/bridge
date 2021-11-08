@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/wzshiming/bridge"
@@ -31,7 +30,6 @@ func SMux(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 }
 
 type sMux struct {
-	mux          sync.Mutex
 	dialer       bridge.Dialer
 	listenConfig bridge.ListenConfig
 	sess         *smux.Session
@@ -55,8 +53,6 @@ func (m *sMux) DialContext(ctx context.Context, network, address string) (net.Co
 	}
 	conn, err := m.sess.OpenStream()
 	if err != nil {
-		m.sess.Close()
-		m.sess = nil
 		return m.DialContext(ctx, network, address)
 	}
 	return conn, nil
@@ -134,7 +130,7 @@ func (l *listenerSession) Accept() (net.Conn, error) {
 
 func (l *listenerSession) Close() error {
 	l.cancel()
-	return l.Close()
+	return l.listener.Close()
 }
 
 func (l *listenerSession) Addr() net.Addr {
