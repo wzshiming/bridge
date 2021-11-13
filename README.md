@@ -11,6 +11,16 @@ Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh proxycomma
 - [English](https://github.com/wzshiming/bridge/blob/master/README.md)
 - [简体中文](https://github.com/wzshiming/bridge/blob/master/README_cn.md)
 
+## Supported protocols
+
+- [Socks4](https://github.com/wzshiming/socks4)
+- [Socks5](https://github.com/wzshiming/socks5)
+- [HTTP Proxy](https://github.com/wzshiming/httpproxy)
+- [Shadow Socks](https://github.com/wzshiming/shadowsocks)
+- [SSH Proxy](https://github.com/wzshiming/sshproxy)
+- [Any Proxy](https://github.com/wzshiming/anyproxy)
+- [Emux](https://github.com/wzshiming/emux)
+
 ## Example
 
 Mapping example.org:80 TCP port to 8080 port of the local machines.  

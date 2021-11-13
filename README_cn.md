@@ -11,6 +11,16 @@ Bridge 是一个支持 http(s)-connect socks4/4a/5/5h ssh proxycommand 的tcp代
 - [English](https://github.com/wzshiming/bridge/blob/master/README.md)
 - [简体中文](https://github.com/wzshiming/bridge/blob/master/README_cn.md)
 
+## 支持的协议
+
+- [Socks4](https://github.com/wzshiming/socks4)
+- [Socks5](https://github.com/wzshiming/socks5)
+- [HTTP Proxy](https://github.com/wzshiming/httpproxy)
+- [Shadow Socks](https://github.com/wzshiming/shadowsocks)
+- [SSH Proxy](https://github.com/wzshiming/sshproxy)
+- [Any Proxy](https://github.com/wzshiming/anyproxy)
+- [Emux](https://github.com/wzshiming/emux)
+
 ## 示例
 
 映射 example.org:80 tcp 端口到本机的 8080 端口.  
