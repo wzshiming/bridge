@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/internal/warp"
+	"github.com/wzshiming/bridge/internal/wrapping"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/commandproxy"
 )
@@ -47,7 +47,7 @@ func newProxyDialer(cmd string) (*proxyDialer, error) {
 	}
 	return &proxyDialer{
 		proxyCommand: scmd,
-		localAddr:    warp.NewNetAddr(uri.Scheme, uri.Opaque),
+		localAddr:    wrapping.NewNetAddr(uri.Scheme, uri.Opaque),
 	}, nil
 }
 
@@ -63,12 +63,12 @@ type command struct {
 
 func (c *command) Listen(ctx context.Context, network, address string) (net.Listener, error) {
 	proxy := c.pd.proxyCommand.Format(network, address)
-	remoteAddr := warp.NewNetAddr(network, address)
-	return warp.NewCommandListener(ctx, c.CommandDialer, c.pd.localAddr, remoteAddr, proxy)
+	remoteAddr := wrapping.NewNetAddr(network, address)
+	return wrapping.NewCommandListener(ctx, c.CommandDialer, c.pd.localAddr, remoteAddr, proxy)
 }
 
 func (c *command) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	proxy := c.pd.proxyCommand.Format(network, address)
-	remoteAddr := warp.NewNetAddr(network, address)
-	return warp.NewCommandDialContext(ctx, c.CommandDialer, c.pd.localAddr, remoteAddr, proxy)
+	remoteAddr := wrapping.NewNetAddr(network, address)
+	return wrapping.NewCommandDialContext(ctx, c.CommandDialer, c.pd.localAddr, remoteAddr, proxy)
 }

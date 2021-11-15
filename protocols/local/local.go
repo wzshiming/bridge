@@ -7,14 +7,14 @@ import (
 	"strings"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/internal/warp"
+	"github.com/wzshiming/bridge/internal/wrapping"
 	"github.com/wzshiming/commandproxy"
 )
 
 var LOCAL = &Local{
 	Dialer:       &net.Dialer{},
 	ListenConfig: &net.ListenConfig{},
-	LocalAddr:    warp.NewNetAddr("local", "local"),
+	LocalAddr:    wrapping.NewNetAddr("local", "local"),
 }
 
 type Local struct {
@@ -38,13 +38,13 @@ func (l *Local) CommandDialContext(ctx context.Context, name string, args ...str
 	if err != nil {
 		return nil, err
 	}
-	remoteAddr := warp.NewNetAddr("cmd", strings.Join(append([]string{name}, args...), " "))
-	conn = warp.ConnWithAddr(conn, l.LocalAddr, remoteAddr)
+	remoteAddr := wrapping.NewNetAddr("cmd", strings.Join(append([]string{name}, args...), " "))
+	conn = wrapping.ConnWithAddr(conn, l.LocalAddr, remoteAddr)
 	return conn, nil
 }
 
 func (l *Local) CommandListen(ctx context.Context, name string, args ...string) (net.Listener, error) {
 	proxy := append([]string{name}, args...)
-	remoteAddr := warp.NewNetAddr("cmd", strings.Join(proxy, " "))
-	return warp.NewCommandListener(ctx, l, l.LocalAddr, remoteAddr, proxy)
+	remoteAddr := wrapping.NewNetAddr("cmd", strings.Join(proxy, " "))
+	return wrapping.NewCommandListener(ctx, l, l.LocalAddr, remoteAddr, proxy)
 }
