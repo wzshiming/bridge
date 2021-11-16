@@ -21,6 +21,7 @@ import (
 	_ "github.com/wzshiming/bridge/protocols/tls"
 	_ "github.com/wzshiming/bridge/protocols/ws"
 
+	_ "github.com/wzshiming/anyproxy/pprof"
 	_ "github.com/wzshiming/anyproxy/proxies/httpproxy"
 	_ "github.com/wzshiming/anyproxy/proxies/shadowsocks"
 	_ "github.com/wzshiming/anyproxy/proxies/socks4"
