@@ -23,6 +23,7 @@ require (
 
 require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
+	github.com/wzshiming/hostmatcher v0.0.1 // indirect
 	github.com/wzshiming/sshd v0.1.0 // indirect
 	github.com/wzshiming/trie v0.0.1 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect

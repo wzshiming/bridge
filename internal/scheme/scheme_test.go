@@ -25,6 +25,14 @@ func Test_ResolveProtocol(t *testing.T) {
 		},
 		{
 			args: args{
+				addr: "nc:?",
+			},
+			wantNetwork: "nc",
+			wantAddress: "",
+			wantOk:      true,
+		},
+		{
+			args: args{
 				addr: "nc:cmd --",
 			},
 			wantNetwork: "nc",

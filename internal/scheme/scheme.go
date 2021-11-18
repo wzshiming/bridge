@@ -36,6 +36,11 @@ func SplitSchemeAddr(addr string) (string, string, bool) {
 
 	u, _ := url.Parse(addr)
 	if u != nil && u.Scheme != "" {
+		// scheme:?args=...
+		if u.ForceQuery {
+			return u.Scheme, u.Opaque, true
+		}
+
 		// scheme://host
 		if u.Opaque == "" {
 			if u.Host != "" {
