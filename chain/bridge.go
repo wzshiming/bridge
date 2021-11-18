@@ -33,11 +33,11 @@ func BridgeWithConfig(ctx context.Context, chain config.Chain, d bool) error {
 	dials := chain.Proxy[1:]
 
 	if len(dials) != 0 {
-		b, err := Default.BridgeChainWithConfig(local.LOCAL, dials...)
+		d, err := Default.BridgeChainWithConfig(local.LOCAL, dials...)
 		if err != nil {
 			return err
 		}
-		dialer = b
+		dialer = d
 	}
 
 	// No listener is set, use stdio.
