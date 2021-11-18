@@ -9,7 +9,7 @@ require (
 	github.com/wzshiming/anyproxy v0.5.2
 	github.com/wzshiming/cmux v0.2.2
 	github.com/wzshiming/commandproxy v0.2.0
-	github.com/wzshiming/emux v0.1.3
+	github.com/wzshiming/emux v0.1.4
 	github.com/wzshiming/httpproxy v0.4.1
 	github.com/wzshiming/notify v0.1.0
 	github.com/wzshiming/schedialer v0.2.1
