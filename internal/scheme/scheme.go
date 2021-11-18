@@ -44,6 +44,10 @@ func SplitSchemeAddr(addr string) (string, string, bool) {
 			if u.Path != "" {
 				return u.Scheme, u.Path, true
 			}
+			// scheme:?args=...
+			if u.ForceQuery || u.RawQuery != "" {
+				return u.Scheme, u.RawQuery, true
+			}
 		}
 
 		// scheme: other

@@ -15,12 +15,16 @@ import (
 
 // BridgeChain is a bridger that supports multiple crossing of bridger.
 type BridgeChain struct {
-	proto map[string]bridge.Bridger
+	DialerFunc func(dialer bridge.Dialer) bridge.Dialer
+	proto      map[string]bridge.Bridger
 }
 
 // NewBridgeChain create a new BridgeChain.
 func NewBridgeChain() *BridgeChain {
-	return &BridgeChain{map[string]bridge.Bridger{}}
+	return &BridgeChain{
+		proto:      map[string]bridge.Bridger{},
+		DialerFunc: NewEnvDialer,
+	}
 }
 
 // BridgeChain is multiple crossing of bridge.
@@ -45,6 +49,19 @@ func (b *BridgeChain) BridgeChainWithConfig(dialer bridge.Dialer, addresses ...c
 	if len(addresses) == 0 {
 		return dialer, nil
 	}
+	d, err := b.bridgeChainWithConfig(dialer, addresses...)
+	if err != nil {
+		return nil, err
+	}
+	if b.DialerFunc != nil {
+		d = b.DialerFunc(d)
+	}
+	return d, nil
+}
+func (b *BridgeChain) bridgeChainWithConfig(dialer bridge.Dialer, addresses ...config.Node) (bridge.Dialer, error) {
+	if len(addresses) == 0 {
+		return dialer, nil
+	}
 	address := addresses[len(addresses)-1]
 	d, err := b.Dial(dialer, address.LB, address.Probe)
 	if err != nil {
@@ -54,7 +71,7 @@ func (b *BridgeChain) BridgeChainWithConfig(dialer bridge.Dialer, addresses ...c
 	if len(addresses) == 0 {
 		return d, nil
 	}
-	return b.BridgeChainWithConfig(d, addresses...)
+	return b.bridgeChainWithConfig(d, addresses...)
 }
 
 func (b *BridgeChain) Dial(dialer bridge.Dialer, addresses []string, probeUrl string) (bridge.Dialer, error) {
