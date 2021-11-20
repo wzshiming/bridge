@@ -1,10 +1,12 @@
 package emux
 
 import (
+	"context"
 	"net/url"
 	"strconv"
 
 	"github.com/wzshiming/bridge"
+	"github.com/wzshiming/bridge/internal/pool"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/emux"
 )
@@ -18,9 +20,10 @@ func EMux(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	d := emux.NewDialer(dialer)
+	ctx := context.Background()
+	d := emux.NewDialer(ctx, dialer)
 	d.Instruction = *instruction
+	d.BytesPool = pool.Bytes
 	if handshake != nil {
 		if len(handshake) == 0 {
 			d.Handshake = nil
@@ -29,8 +32,9 @@ func EMux(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 		}
 	}
 	if listenConfig, ok := dialer.(bridge.ListenConfig); ok {
-		l := emux.NewListenConfig(listenConfig)
+		l := emux.NewListenConfig(ctx, listenConfig)
 		l.Instruction = *instruction
+		l.BytesPool = pool.Bytes
 		if handshake != nil {
 			if len(handshake) == 0 {
 				d.Handshake = nil
