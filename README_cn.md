@@ -55,7 +55,7 @@ bridge -b :8080 -p - -p http://username:password@my_server1:8080
 # `http_proxy=http://127.0.0.1:8080 curl example.org` 将经过代理
 ```
 
-也可以通过 ssh 监听端口 本地的端口映射到服务器的端口/  
+也可以通过 ssh 监听端口 本地的端口映射到服务器的端口,  
 由于 sshd 的限制只能监听 127.0.0.1 的端口,  
 如果想提供对外的服务需要把 /etc/ssh/sshd_config 里的 GatewayPorts no 改成 yes 然后重新加载 sshd.  
 
