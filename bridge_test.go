@@ -26,6 +26,7 @@ import (
 	_ "github.com/wzshiming/anyproxy/proxies/shadowsocks"
 	_ "github.com/wzshiming/anyproxy/proxies/socks4"
 	_ "github.com/wzshiming/anyproxy/proxies/socks5"
+	_ "github.com/wzshiming/anyproxy/proxies/sshproxy"
 
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge/chain"
@@ -75,12 +76,14 @@ func newProxy(addr string) (uri string, err error) {
 }
 
 var ProxyServer = []string{
-	"socks5://:0",
-	"socks4://:0",
-	"http://:0",
-	"http://h:p@:0",
-	"socks4://s4@:0",
-	"socks5://s5:p@:0",
+	"socks5://127.0.0.1:0",
+	"socks4://127.0.0.1:0",
+	"http://127.0.0.1:0",
+	"ssh://127.0.0.1:0",
+	"http://h:p@127.0.0.1:0",
+	"socks4://s4@127.0.0.1:0",
+	"socks5://s5:p@127.0.0.1:0",
+	"ssh://s:p@127.0.0.1:0",
 }
 
 func init() {
