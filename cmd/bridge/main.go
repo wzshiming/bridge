@@ -64,7 +64,7 @@ func init() {
 
 	var cancel func()
 	ctx, cancel = context.WithCancel(context.Background())
-	notify.On(cancel, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
+	notify.OnSlice([]os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL}, cancel)
 }
 
 func printDefaults() {
