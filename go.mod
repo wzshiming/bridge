@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/Microsoft/go-winio v0.5.0
+	github.com/gogf/greuse v1.1.0
 	github.com/golang/snappy v0.0.4
 	github.com/spf13/pflag v1.0.5
 	github.com/wzshiming/anyproxy v0.5.4
