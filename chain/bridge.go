@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge"
@@ -88,62 +89,95 @@ func Bridge(ctx context.Context, listens, dials []string, d bool) error {
 }
 
 func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, dials []string, d bool) error {
-	listeners := []net.Listener{}
+	wg := sync.WaitGroup{}
+	listeners := make([]net.Listener, 0, len(listens))
 	for _, l := range listens {
 		network, listen, ok := scheme.SplitSchemeAddr(l)
 		if !ok {
+			log.Println(fmt.Errorf("unsupported protocol format %q", l))
 			return fmt.Errorf("unsupported protocol format %q", l)
 		}
 		listener, err := common.Listen(ctx, listenConfig, network, listen)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 		listeners = append(listeners, listener)
 	}
+
 	if ctx != context.Background() {
 		go func() {
 			<-ctx.Done()
 			for _, listener := range listeners {
+				if listener == nil {
+					continue
+				}
 				listener.Close()
 			}
 		}()
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(listeners))
-	for _, listener := range listeners {
-		go func(listener net.Listener) {
+	wg.Add(len(listens))
+	for i, l := range listens {
+		go func(i int, l string) {
 			defer wg.Done()
-			for {
+			listener := listeners[i]
 
+			off := time.Second / 10
+		loop:
+			for ctx.Err() == nil {
 				raw, err := listener.Accept()
 				if err != nil {
 					if ignoreClosedErr(err) != nil {
-						log.Println(err)
+						log.Println(l, err)
+					}
+
+					for ctx.Err() == nil {
+						off <<= 1
+						if off > time.Second*30 {
+							off = time.Second * 30
+						}
+						log.Println(l, err, ": Relisten after", off)
+						time.Sleep(off)
+
+						network, listen, ok := scheme.SplitSchemeAddr(l)
+						if !ok {
+							log.Println(fmt.Errorf("unsupported protocol format %q", l))
+							return
+						}
+						listener, err = common.Listen(ctx, listenConfig, network, listen)
+						if err == nil {
+							listeners[i] = listener
+							continue loop
+						}
 					}
 					return
 				}
 				if d {
 					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), strings.Join(dials, "|"))
 				}
+				off = time.Second / 10
 				go stepIgnoreErr(ctx, dialer, raw, dials)
 			}
-		}(listener)
+		}(i, l)
 	}
 	wg.Wait()
 	return nil
 }
 
 func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, d bool) error {
+	wg := sync.WaitGroup{}
 	svc, err := anyproxy.NewAnyProxy(ctx, listens, dialer, log.Std, pool.Bytes)
 	if err != nil {
 		return err
 	}
 	hosts := svc.Hosts()
-	listeners := []net.Listener{}
-	for _, listen := range hosts {
-		listener, err := common.Listen(ctx, listenConfig, "tcp", listen)
+
+	listeners := make([]net.Listener, 0, len(listens))
+	for _, host := range hosts {
+		listener, err := common.Listen(ctx, listenConfig, "tcp", host)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 		listeners = append(listeners, listener)
@@ -152,22 +186,42 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 		go func() {
 			<-ctx.Done()
 			for _, listener := range listeners {
+				if listener == nil {
+					continue
+				}
 				listener.Close()
 			}
 		}()
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(listeners))
-	for i, listener := range listeners {
-		go func(host string, listener net.Listener) {
+	wg.Add(len(hosts))
+	for i, host := range hosts {
+		go func(i int, host string) {
 			defer wg.Done()
+			listener := listeners[i]
 			h := svc.Match(host)
-			for {
+
+			off := time.Second / 10
+		loop:
+			for ctx.Err() == nil {
 				raw, err := listener.Accept()
 				if err != nil {
 					if ignoreClosedErr(err) != nil {
-						log.Println(err)
+						log.Println(host, err)
+					}
+					for ctx.Err() == nil {
+						off <<= 1
+						if off > time.Second*30 {
+							off = time.Second * 30
+						}
+						log.Println(host, err, ": Relisten after", off)
+						time.Sleep(off)
+
+						listener, err = common.Listen(ctx, listenConfig, "tcp", host)
+						if err == nil {
+							listeners[i] = listener
+							continue loop
+						}
 					}
 					return
 				}
@@ -189,9 +243,10 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 					}
 					h = svc.Match(host)
 				}
+				off = time.Second / 10
 				go h.ServeConn(raw)
 			}
-		}(hosts[i], listener)
+		}(i, host)
 	}
 	wg.Wait()
 	return nil
