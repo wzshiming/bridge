@@ -28,6 +28,7 @@ import (
 	_ "github.com/wzshiming/anyproxy/proxies/socks5"
 	_ "github.com/wzshiming/anyproxy/proxies/sshproxy"
 
+	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge/chain"
@@ -38,12 +39,12 @@ import (
 )
 
 var (
-	ctx      = context.Background()
-	configs  []string
-	toConfig bool
-	listens  []string
-	dials    []string
-	dump     bool
+	ctx, globalCancel = context.WithCancel(context.Background())
+	configs           []string
+	toConfig          bool
+	listens           []string
+	dials             []string
+	dump              bool
 )
 
 const defaults = `Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh proxycommand
@@ -72,11 +73,9 @@ func init() {
 	}
 	logger.Std = zapr.NewLogger(zapLog)
 
-	var cancel func()
-	ctx, cancel = context.WithCancel(context.Background())
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL}
 	notify.OnceSlice(signals, func() {
-		cancel()
+		globalCancel()
 		logger.Std.Info("Wait for the existing task to complete, and exit directly if the signal occurs again")
 		notify.OnceSlice(signals, func() {
 			os.Exit(1)
@@ -117,12 +116,21 @@ func main() {
 		return
 	}
 
+	if len(configs) != 0 {
+		runWithReload(ctx, logger.Std, tasks, configs)
+	} else {
+		run(ctx, logger.Std, tasks)
+	}
+	return
+}
+
+func run(ctx context.Context, log logr.Logger, tasks []config.Chain) {
 	var wg sync.WaitGroup
 	wg.Add(len(tasks))
 	for _, task := range tasks {
 		go func(task config.Chain) {
 			defer wg.Done()
-			log := logger.Std.WithValues("chain", task)
+			log := log.WithValues("chains", task)
 			log.Info(chain.ShowChainWithConfig(task))
 			err := chain.BridgeWithConfig(ctx, log, task, dump)
 			if err != nil {
@@ -131,5 +139,4 @@ func main() {
 		}(task)
 	}
 	wg.Wait()
-	return
 }

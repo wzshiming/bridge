@@ -109,6 +109,7 @@ func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenC
 	if ctx != context.Background() {
 		go func() {
 			<-ctx.Done()
+			log.Info("Close all listeners")
 			for _, listener := range listeners {
 				if listener == nil {
 					continue
@@ -188,6 +189,7 @@ func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.Liste
 	if ctx != context.Background() {
 		go func() {
 			<-ctx.Done()
+			log.Info("Close all listeners")
 			for _, listener := range listeners {
 				if listener == nil {
 					continue
@@ -293,7 +295,7 @@ func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, dia
 		pool.Bytes.Put(buf1)
 		pool.Bytes.Put(buf2)
 	}()
-	return commandproxy.Tunnel(ctx, conn, raw, buf1, buf2)
+	return commandproxy.Tunnel(context.Background(), conn, raw, buf1, buf2)
 }
 
 func ShowChainWithConfig(chain config.Chain) string {

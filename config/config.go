@@ -89,6 +89,14 @@ func (c Chain) Verification() error {
 	return nil
 }
 
+func (c Chain) Unique() string {
+	d, err := json.Marshal(c)
+	if err != nil {
+		return ""
+	}
+	return string(d)
+}
+
 type Node struct {
 	Probe string   `json:"probe"`
 	LB    []string `json:"lb"`
