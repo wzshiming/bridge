@@ -7,8 +7,6 @@ import (
 	"net"
 	"os"
 	"sync"
-
-	"github.com/wzshiming/bridge/internal/log"
 )
 
 var mut = sync.Mutex{}
@@ -26,7 +24,7 @@ func (s *syncDumper) Dump(p []byte) (n int, err error) {
 	mut.Lock()
 	defer mut.Unlock()
 	s.Count++
-	log.Printf(" %d. %s \n", s.Count, s.Prefix)
+	fmt.Printf("# %d. %s \n", s.Count, s.Prefix)
 	w := hex.Dumper(os.Stderr)
 	defer w.Close()
 	return w.Write(p)

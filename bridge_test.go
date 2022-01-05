@@ -30,13 +30,13 @@ import (
 
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge/chain"
-	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/bridge/logger"
 )
 
 var ctx = context.Background()
 
 func Bridge(ctx context.Context, listens, dials []string) error {
-	return chain.Bridge(ctx, listens, dials, false)
+	return chain.Bridge(ctx, logger.Std, listens, dials, false)
 }
 
 func MustProxy(addr string) (uri string) {
@@ -66,7 +66,7 @@ func newProxy(addr string) (uri string, err error) {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				log.Std.Println(err)
+				logger.Std.Error(err, "accept")
 				return
 			}
 			go host.ServeConn(conn)
@@ -89,7 +89,7 @@ var ProxyServer = []string{
 func init() {
 	for i, proxy := range ProxyServer {
 		ProxyServer[i] = MustProxy(proxy)
-		log.Println(ProxyServer[i])
+		logger.Std.Info(ProxyServer[i])
 	}
 }
 

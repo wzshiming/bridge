@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/bridge/logger"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/xtaci/smux"
 )
@@ -88,13 +88,13 @@ func (l *listenerSession) run() {
 	for l.ctx.Err() == nil {
 		sess, err := l.accept()
 		if err != nil {
-			log.Println(err)
+			logger.Std.Error(err, "smux accept")
 			return
 		}
 		go func() {
 			err = l.acceptSession(sess)
 			if err != nil {
-				log.Println(err)
+				logger.Std.Error(err, "smux acceptSession")
 			}
 		}()
 	}

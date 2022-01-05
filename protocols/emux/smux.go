@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/internal/pool"
+	"github.com/wzshiming/bridge/logger"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/emux"
 )
@@ -25,7 +25,7 @@ func EMux(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	d := emux.NewDialer(ctx, dialer)
 	d.Instruction = *instruction
 	d.BytesPool = pool.Bytes
-	d.Logger = log.Std
+	d.Logger = logger.Wrap(logger.Std, "emux")
 	if handshake != nil {
 		if len(handshake) == 0 {
 			d.Handshake = nil
@@ -37,7 +37,7 @@ func EMux(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 		l := emux.NewListenConfig(ctx, listenConfig)
 		l.Instruction = *instruction
 		l.BytesPool = pool.Bytes
-		l.Logger = log.Std
+		l.Logger = logger.Wrap(logger.Std, "emux")
 		if handshake != nil {
 			if len(handshake) == 0 {
 				d.Handshake = nil

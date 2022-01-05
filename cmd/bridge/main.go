@@ -28,11 +28,13 @@ import (
 	_ "github.com/wzshiming/anyproxy/proxies/socks5"
 	_ "github.com/wzshiming/anyproxy/proxies/sshproxy"
 
+	"github.com/go-logr/zapr"
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/config"
-	"github.com/wzshiming/bridge/internal/log"
+	"github.com/wzshiming/bridge/logger"
 	"github.com/wzshiming/notify"
+	"go.uber.org/zap"
 )
 
 var (
@@ -62,9 +64,24 @@ func init() {
 	flag.BoolVarP(&dump, "debug", "d", dump, "Output the communication data.")
 	flag.Parse()
 
+	logConfig := zap.NewDevelopmentConfig()
+	zapLog, err := logConfig.Build()
+	if err != nil {
+		logger.Std.Error(err, "who watches the watchmen")
+		os.Exit(1)
+	}
+	logger.Std = zapr.NewLogger(zapLog)
+
 	var cancel func()
 	ctx, cancel = context.WithCancel(context.Background())
-	notify.OnSlice([]os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL}, cancel)
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL}
+	notify.OnceSlice(signals, func() {
+		cancel()
+		logger.Std.Info("Wait for the existing task to complete, and exit directly if the signal occurs again")
+		notify.OnceSlice(signals, func() {
+			os.Exit(1)
+		})
+	})
 }
 
 func printDefaults() {
@@ -79,14 +96,14 @@ func main() {
 		tasks, err = config.LoadConfig(configs...)
 		if err != nil {
 			printDefaults()
-			log.Println(err)
+			logger.Std.Error(err, "LoadConfig")
 			return
 		}
 	} else {
 		tasks, err = config.LoadConfigWithArgs(listens, dials)
 		if err != nil {
 			printDefaults()
-			log.Println(err)
+			logger.Std.Error(err, "LoadConfigWithArgs")
 			return
 		}
 	}
@@ -105,10 +122,11 @@ func main() {
 	for _, task := range tasks {
 		go func(task config.Chain) {
 			defer wg.Done()
-			log.Println(chain.ShowChainWithConfig(task))
-			err := chain.BridgeWithConfig(ctx, task, dump)
+			log := logger.Std.WithValues("chain", task)
+			log.Info(chain.ShowChainWithConfig(task))
+			err := chain.BridgeWithConfig(ctx, log, task, dump)
 			if err != nil {
-				log.Println(err)
+				log.Error(err, "BridgeWithConfig")
 			}
 		}(task)
 	}

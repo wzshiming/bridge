@@ -13,19 +13,20 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/config"
 	"github.com/wzshiming/bridge/internal/common"
 	"github.com/wzshiming/bridge/internal/dump"
-	"github.com/wzshiming/bridge/internal/log"
 	"github.com/wzshiming/bridge/internal/pool"
 	"github.com/wzshiming/bridge/internal/scheme"
+	"github.com/wzshiming/bridge/logger"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/commandproxy"
 )
 
-func BridgeWithConfig(ctx context.Context, chain config.Chain, d bool) error {
+func BridgeWithConfig(ctx context.Context, log logr.Logger, chain config.Chain, d bool) error {
 	var (
 		dialer       bridge.Dialer       = local.LOCAL
 		listenConfig bridge.ListenConfig = local.LOCAL
@@ -74,32 +75,32 @@ func BridgeWithConfig(ctx context.Context, chain config.Chain, d bool) error {
 	}
 
 	if len(dial.LB) != 0 && dial.LB[0] == "-" {
-		return bridgeProxy(ctx, listenConfig, dialer, listen.LB, d)
+		return bridgeProxy(ctx, log, listenConfig, dialer, listen.LB, d)
 	} else {
-		return bridgeTCP(ctx, listenConfig, dialer, listen.LB, dial.LB, d)
+		return bridgeTCP(ctx, log, listenConfig, dialer, listen.LB, dial.LB, d)
 	}
 }
 
-func Bridge(ctx context.Context, listens, dials []string, d bool) error {
+func Bridge(ctx context.Context, log logr.Logger, listens, dials []string, d bool) error {
 	chain, err := config.LoadConfigWithArgs(listens, dials)
 	if err != nil {
 		return err
 	}
-	return BridgeWithConfig(ctx, chain[0], d)
+	return BridgeWithConfig(ctx, log, chain[0], d)
 }
 
-func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, dials []string, d bool) error {
+func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, dials []string, d bool) error {
 	wg := sync.WaitGroup{}
 	listeners := make([]net.Listener, 0, len(listens))
 	for _, l := range listens {
 		network, listen, ok := scheme.SplitSchemeAddr(l)
 		if !ok {
-			log.Println(fmt.Errorf("unsupported protocol format %q", l))
+			log.Error(fmt.Errorf("unsupported protocol format %q", l), "")
 			return fmt.Errorf("unsupported protocol format %q", l)
 		}
 		listener, err := common.Listen(ctx, listenConfig, network, listen)
 		if err != nil {
-			log.Println(err)
+			log.Error(err, "Listen")
 			return err
 		}
 		listeners = append(listeners, listener)
@@ -123,26 +124,26 @@ func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bri
 			defer wg.Done()
 			listener := listeners[i]
 
-			off := time.Second / 10
+			backoff := time.Second / 10
 		loop:
 			for ctx.Err() == nil {
 				raw, err := listener.Accept()
 				if err != nil {
 					if ignoreClosedErr(err) != nil {
-						log.Println(l, err)
+						log.Error(err, "Accept")
 					}
 
 					for ctx.Err() == nil {
-						off <<= 1
-						if off > time.Second*30 {
-							off = time.Second * 30
+						backoff <<= 1
+						if backoff > time.Second*30 {
+							backoff = time.Second * 30
 						}
-						log.Println(l, err, ": Relisten after", off)
-						time.Sleep(off)
+						log.Info("Relisten", "backoff", backoff)
+						time.Sleep(backoff)
 
 						network, listen, ok := scheme.SplitSchemeAddr(l)
 						if !ok {
-							log.Println(fmt.Errorf("unsupported protocol format %q", l))
+							log.Error(fmt.Errorf("unsupported protocol format %q", l), "")
 							return
 						}
 						listener, err = common.Listen(ctx, listenConfig, network, listen)
@@ -150,14 +151,16 @@ func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bri
 							listeners[i] = listener
 							continue loop
 						}
+						log.Error(err, "Relisten")
 					}
 					return
 				}
 				if d {
 					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), strings.Join(dials, "|"))
 				}
-				off = time.Second / 10
-				go stepIgnoreErr(ctx, dialer, raw, dials)
+				backoff = time.Second / 10
+				log.V(1).Info("Connect", "remote_address", raw.RemoteAddr().String())
+				go stepIgnoreErr(ctx, log, dialer, raw, dials)
 			}
 		}(i, l)
 	}
@@ -165,9 +168,9 @@ func bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bri
 	return nil
 }
 
-func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, d bool) error {
+func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, d bool) error {
 	wg := sync.WaitGroup{}
-	svc, err := anyproxy.NewAnyProxy(ctx, listens, dialer, log.Std, pool.Bytes)
+	svc, err := anyproxy.NewAnyProxy(ctx, listens, dialer, logger.Wrap(log, "anyproxy"), pool.Bytes)
 	if err != nil {
 		return err
 	}
@@ -177,7 +180,7 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 	for _, host := range hosts {
 		listener, err := common.Listen(ctx, listenConfig, "tcp", host)
 		if err != nil {
-			log.Println(err)
+			log.Error(err, "Listen")
 			return err
 		}
 		listeners = append(listeners, listener)
@@ -201,27 +204,28 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 			listener := listeners[i]
 			h := svc.Match(host)
 
-			off := time.Second / 10
+			backoff := time.Second / 10
 		loop:
 			for ctx.Err() == nil {
 				raw, err := listener.Accept()
 				if err != nil {
 					if ignoreClosedErr(err) != nil {
-						log.Println(host, err)
+						log.Error(err, "Accept")
 					}
 					for ctx.Err() == nil {
-						off <<= 1
-						if off > time.Second*30 {
-							off = time.Second * 30
+						backoff <<= 1
+						if backoff > time.Second*30 {
+							backoff = time.Second * 30
 						}
-						log.Println(host, err, ": Relisten after", off)
-						time.Sleep(off)
+						log.Info("Relisten", "backoff", backoff)
+						time.Sleep(backoff)
 
 						listener, err = common.Listen(ctx, listenConfig, "tcp", host)
 						if err == nil {
 							listeners[i] = listener
 							continue loop
 						}
+						log.Error(err, "Relisten")
 					}
 					return
 				}
@@ -236,14 +240,15 @@ func bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer b
 						}
 						return dump.NewDumpConn(c, false, raw.RemoteAddr().String(), address), nil
 					})
-					svc, err := anyproxy.NewAnyProxy(ctx, listens, dial, log.Std, pool.Bytes)
+					svc, err := anyproxy.NewAnyProxy(ctx, listens, dial, logger.Wrap(log, "anyproxy"), pool.Bytes)
 					if err != nil {
-						log.Println(err)
+						log.Error(err, "NewAnyProxy")
 						return
 					}
 					h = svc.Match(host)
 				}
-				off = time.Second / 10
+				backoff = time.Second / 10
+				log.V(1).Info("Connect", "remote_address", raw.RemoteAddr().String())
 				go h.ServeConn(raw)
 			}
 		}(i, host)
@@ -259,10 +264,10 @@ func ignoreClosedErr(err error) error {
 	return nil
 }
 
-func stepIgnoreErr(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, dials []string) {
+func stepIgnoreErr(ctx context.Context, log logr.Logger, dialer bridge.Dialer, raw io.ReadWriteCloser, dials []string) {
 	err := step(ctx, dialer, raw, dials)
 	if ignoreClosedErr(err) != nil {
-		log.Println(err)
+		log.Error(err, "Step")
 	}
 }
 
