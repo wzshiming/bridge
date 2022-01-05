@@ -73,7 +73,7 @@ func init() {
 	}
 	logger.Std = zapr.NewLogger(zapLog)
 
-	signals := []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL}
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTERM}
 	notify.OnceSlice(signals, func() {
 		globalCancel()
 		logger.Std.Info("Wait for the existing task to complete, and exit directly if the signal occurs again")
