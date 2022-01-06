@@ -16,7 +16,6 @@ import (
 )
 
 func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, configs []string) {
-
 	reloadCn := make(chan struct{}, 1)
 	notify.On(syscall.SIGHUP, func() {
 		select {
@@ -61,15 +60,18 @@ func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, c
 			ctx, cancel := context.WithCancel(ctx)
 			working[uniq] = cancel
 			wg.Add(1)
-			go func(task config.Chain, ctx context.Context) {
+			go func(ctx context.Context, task config.Chain) {
 				defer wg.Done()
 				log := log.WithValues("chains", task)
 				log.Info(chain.ShowChainWithConfig(task))
-				err := chain.BridgeWithConfig(ctx, log, task, dump)
-				if err != nil {
-					log.Error(err, "BridgeWithConfig")
+				for ctx.Err() == nil {
+					err := chain.BridgeWithConfig(ctx, log, task, dump)
+					if err != nil {
+						log.Error(err, "BridgeWithConfig")
+					}
+					time.Sleep(time.Second)
 				}
-			}(task, ctx)
+			}(ctx, task)
 		}
 
 		for uniq := range lastWorking {
