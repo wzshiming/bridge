@@ -52,7 +52,10 @@ func newProxy(addr string) (uri string, err error) {
 	if err != nil {
 		return "", err
 	}
-	proxy, err := anyproxy.NewAnyProxy(ctx, []string{addr}, &net.Dialer{}, nil, nil)
+	proxy, err := anyproxy.NewAnyProxy(ctx, []string{addr}, &anyproxy.Config{
+		Dialer:       &net.Dialer{},
+		ListenConfig: &net.ListenConfig{},
+	})
 	if err != nil {
 		return "", err
 	}

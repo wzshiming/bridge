@@ -171,7 +171,12 @@ func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenC
 
 func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, d bool) error {
 	wg := sync.WaitGroup{}
-	svc, err := anyproxy.NewAnyProxy(ctx, listens, dialer, logger.Wrap(log, "anyproxy"), pool.Bytes)
+	svc, err := anyproxy.NewAnyProxy(ctx, listens, &anyproxy.Config{
+		Dialer:       dialer,
+		ListenConfig: listenConfig,
+		Logger:       logger.Wrap(log, "anyproxy"),
+		BytesPool:    pool.Bytes,
+	})
 	if err != nil {
 		return err
 	}
@@ -242,7 +247,12 @@ func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.Liste
 						}
 						return dump.NewDumpConn(c, false, raw.RemoteAddr().String(), address), nil
 					})
-					svc, err := anyproxy.NewAnyProxy(ctx, listens, dial, logger.Wrap(log, "anyproxy"), pool.Bytes)
+					svc, err := anyproxy.NewAnyProxy(ctx, listens, &anyproxy.Config{
+						Dialer:       dial,
+						ListenConfig: listenConfig,
+						Logger:       logger.Wrap(log, "anyproxy"),
+						BytesPool:    pool.Bytes,
+					})
 					if err != nil {
 						log.Error(err, "NewAnyProxy")
 						return
