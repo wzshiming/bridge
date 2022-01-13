@@ -8,6 +8,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/go-logr/logr"
 	"github.com/gogf/greuse"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/internal/wrapping"
@@ -37,14 +38,17 @@ type Local struct {
 }
 
 func (l *Local) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	logr.FromContextOrDiscard(ctx).V(1).Info("Dial", "network", network, "address", address)
 	return l.Dialer.DialContext(ctx, network, address)
 }
 
 func (l *Local) Listen(ctx context.Context, network, address string) (net.Listener, error) {
+	logr.FromContextOrDiscard(ctx).V(1).Info("Listen", "network", network, "address", address)
 	return l.ListenConfig.Listen(ctx, network, address)
 }
 
 func (l *Local) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {
+	logr.FromContextOrDiscard(ctx).V(1).Info("CommandDial", "name", name, "args", args)
 	proxy := commandproxy.ProxyCommand(ctx, name, args...)
 	proxy.Stderr = os.Stderr
 	conn, err := proxy.Stdio()
@@ -57,6 +61,7 @@ func (l *Local) CommandDialContext(ctx context.Context, name string, args ...str
 }
 
 func (l *Local) CommandListen(ctx context.Context, name string, args ...string) (net.Listener, error) {
+	logr.FromContextOrDiscard(ctx).V(1).Info("CommandListen", "name", name, "args", args)
 	proxy := append([]string{name}, args...)
 	remoteAddr := wrapping.NewNetAddr("cmd", strings.Join(proxy, " "))
 	return wrapping.NewCommandListener(ctx, l, l.LocalAddr, remoteAddr, proxy)
