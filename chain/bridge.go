@@ -95,8 +95,9 @@ func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenC
 	for _, l := range listens {
 		network, listen, ok := scheme.SplitSchemeAddr(l)
 		if !ok {
-			log.Error(fmt.Errorf("unsupported protocol format %q", l), "")
-			return fmt.Errorf("unsupported protocol format %q", l)
+			err := fmt.Errorf("unsupported protocol format %q", l)
+			log.Error(err, "SplitSchemeAddr")
+			return err
 		}
 		listener, err := common.Listen(ctx, listenConfig, network, listen)
 		if err != nil {
@@ -122,7 +123,10 @@ func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenC
 	wg.Add(len(listens))
 	for i, l := range listens {
 		go func(i int, l string) {
-			defer wg.Done()
+			defer func() {
+				log.Info("Close listener", "listen", l)
+				wg.Done()
+			}()
 			listener := listeners[i]
 
 			backoff := time.Second / 10
@@ -191,6 +195,7 @@ func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.Liste
 		}
 		listeners = append(listeners, listener)
 	}
+
 	if ctx != context.Background() {
 		go func() {
 			<-ctx.Done()
@@ -207,7 +212,11 @@ func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.Liste
 	wg.Add(len(hosts))
 	for i, host := range hosts {
 		go func(i int, host string) {
-			defer wg.Done()
+			defer func() {
+				log.Info("Close listener", "listen", host)
+				wg.Done()
+			}()
+
 			listener := listeners[i]
 			h := svc.Match(host)
 
