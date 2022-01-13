@@ -33,6 +33,17 @@ func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, c
 		case <-ctx.Done():
 			return
 		case <-reloadCn:
+		next:
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-reloadCn:
+					continue
+				case <-time.After(time.Second):
+					break next
+				}
+			}
 		}
 		log := log.WithValues("reload_count", count)
 		tasks, err := config.LoadConfig(configs...)
