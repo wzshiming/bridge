@@ -11,7 +11,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/gogf/greuse"
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/internal/wrapping"
+	"github.com/wzshiming/bridge/internal/netutils"
 	"github.com/wzshiming/commandproxy"
 )
 
@@ -20,7 +20,7 @@ var LOCAL = &Local{
 	ListenConfig: &net.ListenConfig{
 		Control: getControl(),
 	},
-	LocalAddr: wrapping.NewNetAddr("local", "local"),
+	LocalAddr: netutils.NewNetAddr("local", "local"),
 }
 
 func getControl() func(network, address string, c syscall.RawConn) error {
@@ -55,14 +55,14 @@ func (l *Local) CommandDialContext(ctx context.Context, name string, args ...str
 	if err != nil {
 		return nil, err
 	}
-	remoteAddr := wrapping.NewNetAddr("cmd", strings.Join(append([]string{name}, args...), " "))
-	conn = wrapping.ConnWithAddr(conn, l.LocalAddr, remoteAddr)
+	remoteAddr := netutils.NewNetAddr("cmd", strings.Join(append([]string{name}, args...), " "))
+	conn = netutils.ConnWithAddr(conn, l.LocalAddr, remoteAddr)
 	return conn, nil
 }
 
 func (l *Local) CommandListen(ctx context.Context, name string, args ...string) (net.Listener, error) {
 	logr.FromContextOrDiscard(ctx).V(1).Info("CommandListen", "name", name, "args", args)
 	proxy := append([]string{name}, args...)
-	remoteAddr := wrapping.NewNetAddr("cmd", strings.Join(proxy, " "))
-	return wrapping.NewCommandListener(ctx, l, l.LocalAddr, remoteAddr, proxy)
+	remoteAddr := netutils.NewNetAddr("cmd", strings.Join(proxy, " "))
+	return netutils.NewCommandListener(ctx, l, l.LocalAddr, remoteAddr, proxy)
 }

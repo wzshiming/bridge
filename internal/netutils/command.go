@@ -1,18 +1,13 @@
-package wrapping
+package netutils
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/cmux"
-)
-
-var (
-	ErrConnClosed = fmt.Errorf("use of closed network connection")
 )
 
 func ConnWithCloser(conn net.Conn, closer func() error) net.Conn {
@@ -102,7 +97,7 @@ func (l *listener) Accept() (net.Conn, error) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 	if atomic.LoadUint32(&l.isClose) == 1 {
-		return nil, ErrConnClosed
+		return nil, ErrClosedConn
 	}
 
 	n, err := NewCommandDialContext(l.ctx, l.commandDialer, l.localAddr, l.remoteAddr, l.proxy)

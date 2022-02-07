@@ -1,9 +1,11 @@
-package common
+package netutils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"reflect"
 	"runtime"
@@ -13,15 +15,30 @@ import (
 	"github.com/wzshiming/commandproxy"
 )
 
-// IsClosedConnError reports whether err is an error from use of a closed
-// network connection.
+var ErrServerClosed = errors.New("server closed")
+
+// IsServerClosedError reports whether err is an error from server closed.
+func IsServerClosedError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if err == http.ErrServerClosed || err == ErrServerClosed || strings.Contains(strings.ToLower(err.Error()), ErrServerClosed.Error()) {
+		return true
+	}
+
+	return false
+}
+
+var ErrClosedConn = errors.New("use of closed network connection")
+
+// IsClosedConnError reports whether err is an error from use of a closed network connection.
 func IsClosedConnError(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	str := err.Error()
-	if strings.Contains(str, "use of closed network connection") {
+	if err == ErrClosedConn || strings.Contains(strings.ToLower(err.Error()), ErrClosedConn.Error()) {
 		return true
 	}
 
@@ -46,6 +63,25 @@ func errno(v error) uintptr {
 	return 0
 }
 
+var ErrAcceptTimeout = errors.New("i/o timeout")
+
+// IsAcceptTimeoutError reports whether err is an error from use of a accept timeout.
+func IsAcceptTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if err == ErrAcceptTimeout || strings.Contains(err.Error(), ErrAcceptTimeout.Error()) {
+		return true
+	}
+
+	if oe, ok := err.(*net.OpError); ok && oe.Op == "accept" {
+		return IsAcceptTimeoutError(oe.Err)
+	}
+
+	return false
+}
+
 func Dial(ctx context.Context, dialer bridge.Dialer, network, address string) (net.Conn, error) {
 	if network == "cmd" || network == "command" {
 		d, ok := dialer.(bridge.CommandDialer)
@@ -57,6 +93,9 @@ func Dial(ctx context.Context, dialer bridge.Dialer, network, address string) (n
 			return nil, err
 		}
 		return d.CommandDialContext(ctx, cmd[0], cmd[1:]...)
+	}
+	if network == "virtual" {
+		return virtualNetwork.DialContext(ctx, "tcp", address)
 	}
 	return dialer.DialContext(ctx, network, address)
 }
@@ -72,6 +111,9 @@ func Listen(ctx context.Context, listener bridge.ListenConfig, network, address 
 			return nil, err
 		}
 		return l.CommandListen(ctx, cmd[0], cmd[1:]...)
+	}
+	if network == "virtual" {
+		return virtualNetwork.Listen(ctx, "tcp", address)
 	}
 	return listener.Listen(ctx, network, address)
 }

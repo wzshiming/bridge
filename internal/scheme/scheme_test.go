@@ -151,6 +151,14 @@ func Test_ResolveProtocol(t *testing.T) {
 			wantAddress: "my_server",
 			wantOk:      true,
 		},
+		{
+			args: args{
+				addr: "virtual://xxxx",
+			},
+			wantNetwork: "virtual",
+			wantAddress: "xxxx",
+			wantOk:      true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

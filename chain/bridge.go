@@ -17,8 +17,8 @@ import (
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/config"
-	"github.com/wzshiming/bridge/internal/common"
 	"github.com/wzshiming/bridge/internal/dump"
+	"github.com/wzshiming/bridge/internal/netutils"
 	"github.com/wzshiming/bridge/internal/pool"
 	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/bridge/logger"
@@ -99,7 +99,7 @@ func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenC
 			log.Error(err, "SplitSchemeAddr")
 			return err
 		}
-		listener, err := common.Listen(ctx, listenConfig, network, listen)
+		listener, err := netutils.Listen(ctx, listenConfig, network, listen)
 		if err != nil {
 			log.Error(err, "Listen")
 			return err
@@ -151,7 +151,7 @@ func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenC
 							log.Error(fmt.Errorf("unsupported protocol format %q", l), "")
 							return
 						}
-						listener, err = common.Listen(ctx, listenConfig, network, listen)
+						listener, err = netutils.Listen(ctx, listenConfig, network, listen)
 						if err == nil {
 							listeners[i] = listener
 							continue loop
@@ -188,7 +188,7 @@ func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.Liste
 
 	listeners := make([]net.Listener, 0, len(listens))
 	for _, host := range hosts {
-		listener, err := common.Listen(ctx, listenConfig, "tcp", host)
+		listener, err := netutils.Listen(ctx, listenConfig, "tcp", host)
 		if err != nil {
 			log.Error(err, "Listen")
 			return err
@@ -236,7 +236,7 @@ func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.Liste
 						log.Info("Relisten", "backoff", backoff)
 						time.Sleep(backoff)
 
-						listener, err = common.Listen(ctx, listenConfig, "tcp", host)
+						listener, err = netutils.Listen(ctx, listenConfig, "tcp", host)
 						if err == nil {
 							listeners[i] = listener
 							continue loop
@@ -250,7 +250,7 @@ func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.Liste
 					// In dubug mode, need to know the address of the client.
 					// Because it is debug, performance is not considered here.
 					dial := bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
-						c, err = common.Dial(ctx, dialer, network, address)
+						c, err = netutils.Dial(ctx, dialer, network, address)
 						if err != nil {
 							return nil, err
 						}
@@ -279,7 +279,7 @@ func bridgeProxy(ctx context.Context, log logr.Logger, listenConfig bridge.Liste
 }
 
 func ignoreClosedErr(err error) error {
-	if err != nil && err != io.EOF && err != io.ErrClosedPipe && !common.IsClosedConnError(err) {
+	if err != nil && err != io.EOF && err != io.ErrClosedPipe && !netutils.IsClosedConnError(err) {
 		return err
 	}
 	return nil
@@ -304,7 +304,7 @@ func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, dia
 		return fmt.Errorf("unsupported protocol format %q", address)
 	}
 
-	conn, err := common.Dial(ctx, dialer, network, address)
+	conn, err := netutils.Dial(ctx, dialer, network, address)
 	if err != nil {
 		return err
 	}
