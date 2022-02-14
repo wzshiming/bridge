@@ -33,8 +33,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/wzshiming/anyproxy v0.6.1 h1:5HZ70QWNPKpQ4UIMc2bUE1GCsTVIBR7uGRn+2WZGD2k=
-github.com/wzshiming/anyproxy v0.6.1/go.mod h1:WzsytPiprpbEQT56jWX1L15xAiAcJJ5E74CzE7vVHrs=
+github.com/wzshiming/anyproxy v0.6.3 h1:wH9TUgzit3ljGNcxaHuOfMECMBxkGC7OCGBw30KrVMo=
+github.com/wzshiming/anyproxy v0.6.3/go.mod h1:WSQFAM20KKANn0t19X803duG33u7J1Z5JEOSOMhvSHo=
 github.com/wzshiming/cmux v0.2.2 h1:U6IH96kRFxnnjy3duskHvp237o8cK6gILQYIROE3NI4=
 github.com/wzshiming/cmux v0.2.2/go.mod h1:Vgdbl+BdSp0X3zHw3P+XW4sxyorR5y9NiKjRGRRnJdo=
 github.com/wzshiming/commandproxy v0.2.0 h1:uPVhgIj2YSncRUo6g9smGR6OMzsIg7lwklcMHPPmEeM=
@@ -55,10 +55,10 @@ github.com/wzshiming/socks4 v0.3.1 h1:1QiCztWWvD5o+VQlpNKrkK1qM8NC2mo6LoeEJc1zUu
 github.com/wzshiming/socks4 v0.3.1/go.mod h1:YEPfhjf/4JezwdTmgXZU+UX+A2KvD05quzhsUBVMNA0=
 github.com/wzshiming/socks5 v0.4.1 h1:MZt9cIHSl3vsLufZDR3aZO3hbpCrylWk5XKAuUrgzbQ=
 github.com/wzshiming/socks5 v0.4.1/go.mod h1:BvCAqlzocQN5xwLjBZDBbvWlrx8sCYSSbHEOf2wZgT0=
-github.com/wzshiming/sshd v0.1.3 h1:reSEx+5NPcNS0cLxipBlW3DeM1Dv4H3KBXUUHc9bnMw=
-github.com/wzshiming/sshd v0.1.3/go.mod h1:7+xrQ+XMfrKmInssZuqw1HDHGper+yWKnCAi4uljLns=
-github.com/wzshiming/sshproxy v0.1.6 h1:7Rcik6C+c9M/8eQsU6f2Nrsf0TMYmsoUIFp32X6vQOQ=
-github.com/wzshiming/sshproxy v0.1.6/go.mod h1:O0cHCYdCm66GVB4HR+vbjXXZGxXp/XZjLABxgNB6J5I=
+github.com/wzshiming/sshd v0.1.5 h1:x1A0IPK8V6JXzKxP3G6gMidVYu/QCcHUALjwND6mTgI=
+github.com/wzshiming/sshd v0.1.5/go.mod h1:7+xrQ+XMfrKmInssZuqw1HDHGper+yWKnCAi4uljLns=
+github.com/wzshiming/sshproxy v0.1.9 h1:5cVuyAz1htUUxlsCHNGU6lAvsX4VNLVNR08ngZFKIqw=
+github.com/wzshiming/sshproxy v0.1.9/go.mod h1:ywnwd+2TqqB8xKkCiiawiZsFGnFmTFu0KnEixuJxH4c=
 github.com/wzshiming/trie v0.0.1 h1:6xnhRyO5tZWR6aKjEpFfm8KSNNHYsNbpKrY1+NdyHME=
 github.com/wzshiming/trie v0.0.1/go.mod h1:Z20IrQFTHnjWz//dssIoiEPWInBZFyuFlPOFPxV0Rec=
 github.com/xtaci/smux v1.5.16 h1:FBPYOkW8ZTjLKUM4LI4xnnuuDC8CQ/dB04HD519WoEk=
