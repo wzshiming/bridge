@@ -24,6 +24,7 @@ func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, c
 		}
 	})
 	wg := sync.WaitGroup{}
+	defer wg.Wait()
 	var lastWorking = map[string]func(){}
 	var cleanups []func()
 	count := 1
@@ -33,17 +34,6 @@ func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, c
 		case <-ctx.Done():
 			return
 		case <-reloadCn:
-		next:
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-reloadCn:
-					continue
-				case <-time.After(time.Second):
-					break next
-				}
-			}
 		}
 		log := log.WithValues("reload_count", count)
 		tasks, err := config.LoadConfig(configs...)
@@ -95,10 +85,14 @@ func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, c
 		}
 		lastWorking = working
 
-		if len(cleanups) > 0 {
-			// TODO: wait for all task is working
-			time.Sleep(time.Second)
+		// TODO: wait for all task is working
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Second):
+		}
 
+		if len(cleanups) > 0 {
 			for _, cleanup := range cleanups {
 				cleanup()
 			}
@@ -106,5 +100,4 @@ func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, c
 		}
 		count++
 	}
-	wg.Wait()
 }
