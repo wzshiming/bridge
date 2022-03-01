@@ -4,31 +4,18 @@ import (
 	"context"
 	"net"
 	"os"
-	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/go-logr/logr"
-	"github.com/gogf/greuse"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/internal/netutils"
 	"github.com/wzshiming/commandproxy"
 )
 
 var LOCAL = &Local{
-	Dialer: &net.Dialer{},
-	ListenConfig: &net.ListenConfig{
-		Control: getControl(),
-	},
-	LocalAddr: netutils.NewNetAddr("local", "local"),
-}
-
-func getControl() func(network, address string, c syscall.RawConn) error {
-	enable, _ := strconv.ParseBool(os.Getenv("ADDRESS_REUSE"))
-	if enable {
-		return greuse.Control
-	}
-	return nil
+	Dialer:       &net.Dialer{},
+	ListenConfig: &net.ListenConfig{},
+	LocalAddr:    netutils.NewNetAddr("local", "local"),
 }
 
 type Local struct {
