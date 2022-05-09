@@ -19,11 +19,13 @@ import (
 	"github.com/wzshiming/bridge/config"
 	"github.com/wzshiming/bridge/internal/dump"
 	"github.com/wzshiming/bridge/internal/netutils"
+	"github.com/wzshiming/bridge/internal/observe"
 	"github.com/wzshiming/bridge/internal/pool"
 	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/bridge/logger"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/commandproxy"
+	"github.com/wzshiming/geario"
 )
 
 func BridgeWithConfig(ctx context.Context, log logr.Logger, chain config.Chain, d bool) error {
@@ -77,7 +79,7 @@ func BridgeWithConfig(ctx context.Context, log logr.Logger, chain config.Chain, 
 	if len(dial.LB) != 0 && dial.LB[0] == "-" {
 		return bridgeProxy(ctx, log, listenConfig, dialer, listen.LB, d)
 	} else {
-		return bridgeTCP(ctx, log, listenConfig, dialer, listen.LB, dial.LB, d)
+		return bridgeTCP(ctx, log, listenConfig, dialer, listen.LB, dial.LB, d, true)
 	}
 }
 
@@ -89,7 +91,7 @@ func Bridge(ctx context.Context, log logr.Logger, listens, dials []string, d boo
 	return BridgeWithConfig(ctx, log, chain[0], d)
 }
 
-func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, dials []string, d bool) error {
+func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, dials []string, d, o bool) error {
 	wg := sync.WaitGroup{}
 	listeners := make([]net.Listener, 0, len(listens))
 	for _, l := range listens {
@@ -129,6 +131,19 @@ func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenC
 			}()
 			listener := listeners[i]
 
+			observeConns := observe.NewObserveConns(func(r, w *geario.Gear) {
+				log.V(1).Info("Observe All",
+					"read_aver", r.Aver(),
+					"read_last_aver", r.LastAver(),
+					"read_max_aver", r.MaxAver(),
+					"read_total", r.Total(),
+					"write_aver", w.Aver(),
+					"write_last_aver", w.LastAver(),
+					"write_max_aver", w.MaxAver(),
+					"write_total", w.Total(),
+				)
+			})
+
 			backoff := time.Second / 10
 		loop:
 			for ctx.Err() == nil {
@@ -165,6 +180,12 @@ func bridgeTCP(ctx context.Context, log logr.Logger, listenConfig bridge.ListenC
 				}
 				backoff = time.Second / 10
 				log.V(1).Info("Connect", "remote_address", raw.RemoteAddr().String())
+
+				if o {
+
+					raw = observeConns.Conn(raw)
+
+				}
 				go stepIgnoreErr(ctx, log, dialer, raw, dials)
 			}
 		}(i, l)
