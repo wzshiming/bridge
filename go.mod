@@ -8,7 +8,7 @@ require (
 	github.com/go-logr/zapr v1.2.2
 	github.com/golang/snappy v0.0.4
 	github.com/spf13/pflag v1.0.5
-	github.com/wzshiming/anyproxy v0.7.0
+	github.com/wzshiming/anyproxy v0.7.2
 	github.com/wzshiming/cmux v0.3.0
 	github.com/wzshiming/commandproxy v0.2.0
 	github.com/wzshiming/emux v0.2.1
@@ -19,7 +19,7 @@ require (
 	github.com/wzshiming/shadowsocks v0.3.1
 	github.com/wzshiming/socks4 v0.3.1
 	github.com/wzshiming/socks5 v0.4.1
-	github.com/wzshiming/sshproxy v0.1.9
+	github.com/wzshiming/sshproxy v0.2.1
 	go.uber.org/zap v1.20.0
 )
 
