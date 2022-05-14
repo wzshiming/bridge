@@ -130,7 +130,8 @@ func run(ctx context.Context, log logr.Logger, tasks []config.Chain) {
 			defer wg.Done()
 			log := log.WithValues("chains", task)
 			log.Info(chain.ShowChainWithConfig(task))
-			err := chain.BridgeWithConfig(ctx, log, task, dump)
+			b := chain.NewBridge(log, dump)
+			err := b.BridgeWithConfig(ctx, task)
 			if err != nil {
 				log.Error(err, "BridgeWithConfig")
 			}

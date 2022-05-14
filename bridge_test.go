@@ -33,8 +33,9 @@ import (
 
 var ctx = context.Background()
 
-func Bridge(ctx context.Context, listens, dials []string) error {
-	return chain.Bridge(ctx, logger.Std, listens, dials, false)
+func bridge(ctx context.Context, listens, dials []string) error {
+	b := chain.NewBridge(logger.Std, false)
+	return b.Bridge(ctx, listens, dials)
 }
 
 func MustProxy(addr string) (uri string) {
@@ -110,7 +111,7 @@ func TestPortForward(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
-		err := Bridge(ctx, []string{proxy}, append([]string{u.Host}, ProxyServer...))
+		err := bridge(ctx, []string{proxy}, append([]string{u.Host}, ProxyServer...))
 		if err != nil {
 			t.Log(err)
 		}
@@ -161,7 +162,7 @@ func TestPortForwardWithRemoteListen(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
-		err := Bridge(ctx, append([]string{proxy}, ProxyServer...), []string{u.Host})
+		err := bridge(ctx, append([]string{proxy}, ProxyServer...), []string{u.Host})
 		if err != nil {
 			t.Log(err)
 		}
@@ -212,7 +213,7 @@ func TestProxy(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
-		err := Bridge(ctx, []string{proxy}, append([]string{"-"}, ProxyServer...))
+		err := bridge(ctx, []string{proxy}, append([]string{"-"}, ProxyServer...))
 		if err != nil {
 			t.Log(err)
 		}
@@ -268,7 +269,7 @@ func TestProxyWithRemoteListen(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
-		err := Bridge(ctx, append([]string{proxy}, ProxyServer...), []string{"-"})
+		err := bridge(ctx, append([]string{proxy}, ProxyServer...), []string{"-"})
 		if err != nil {
 			t.Log(err)
 		}
