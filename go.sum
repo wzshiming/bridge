@@ -30,8 +30,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/wzshiming/anyproxy v0.7.0 h1:3PyCmGjJVc9MZ5hnOvzGb4P68CnVxHmrJ7mMWrCGClA=
-github.com/wzshiming/anyproxy v0.7.0/go.mod h1:Nc0eorI8tEq0lx1Ad8Bxoy2ZNV1CeJ/+F/70GaObpoo=
+github.com/wzshiming/anyproxy v0.7.4 h1:Z1Glt+l7k+ov1PKRIeseeL/VnxsxJsgBQYpYrMPgR9o=
+github.com/wzshiming/anyproxy v0.7.4/go.mod h1:LpGpTwJarbI252Kc1uvVVnf4PPdyObx7q0pYG3hEU1I=
 github.com/wzshiming/cmux v0.3.0 h1:OsALDnhubCbqI+wqayn/DOD5OX0ebcQdHNN4xgY2h14=
 github.com/wzshiming/cmux v0.3.0/go.mod h1:TGi/uEBvRkO5+INEwBHiBtqdNWK+wS+OvvS7XtIf4bQ=
 github.com/wzshiming/commandproxy v0.2.0 h1:uPVhgIj2YSncRUo6g9smGR6OMzsIg7lwklcMHPPmEeM=
@@ -52,10 +52,10 @@ github.com/wzshiming/socks4 v0.3.1 h1:1QiCztWWvD5o+VQlpNKrkK1qM8NC2mo6LoeEJc1zUu
 github.com/wzshiming/socks4 v0.3.1/go.mod h1:YEPfhjf/4JezwdTmgXZU+UX+A2KvD05quzhsUBVMNA0=
 github.com/wzshiming/socks5 v0.4.1 h1:MZt9cIHSl3vsLufZDR3aZO3hbpCrylWk5XKAuUrgzbQ=
 github.com/wzshiming/socks5 v0.4.1/go.mod h1:BvCAqlzocQN5xwLjBZDBbvWlrx8sCYSSbHEOf2wZgT0=
-github.com/wzshiming/sshd v0.1.5 h1:x1A0IPK8V6JXzKxP3G6gMidVYu/QCcHUALjwND6mTgI=
-github.com/wzshiming/sshd v0.1.5/go.mod h1:7+xrQ+XMfrKmInssZuqw1HDHGper+yWKnCAi4uljLns=
-github.com/wzshiming/sshproxy v0.1.9 h1:5cVuyAz1htUUxlsCHNGU6lAvsX4VNLVNR08ngZFKIqw=
-github.com/wzshiming/sshproxy v0.1.9/go.mod h1:ywnwd+2TqqB8xKkCiiawiZsFGnFmTFu0KnEixuJxH4c=
+github.com/wzshiming/sshd v0.1.6 h1:0lZ38eKS6K++b1d75WGrvAyoS1Plzh8Enu+zuS/rS5o=
+github.com/wzshiming/sshd v0.1.6/go.mod h1:7+xrQ+XMfrKmInssZuqw1HDHGper+yWKnCAi4uljLns=
+github.com/wzshiming/sshproxy v0.3.1 h1:kfP2MtQwsuxFXCinFWqWFan7Q/NYUWB2H/VhFlws1as=
+github.com/wzshiming/sshproxy v0.3.1/go.mod h1:evYjliOpQrUm4HAjIW/pJFiBftGPyAjCeKb/TjVknNY=
 github.com/wzshiming/trie v0.1.0 h1:+/icosRlXg7qRp8pQOyd6zD8cPO9cfR4mOJlmI5peq4=
 github.com/wzshiming/trie v0.1.0/go.mod h1:c9thxXTh4KcGkejt4sUsO4c5GUmWpxeWzOJ7AZJaI+8=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
