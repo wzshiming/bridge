@@ -7,6 +7,7 @@ require (
 	github.com/go-logr/logr v1.2.2
 	github.com/go-logr/zapr v1.2.2
 	github.com/golang/snappy v0.0.4
+	github.com/google/go-cmp v0.5.8
 	github.com/spf13/pflag v1.0.5
 	github.com/wzshiming/anyproxy v0.7.6
 	github.com/wzshiming/cmux v0.3.0
