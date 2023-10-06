@@ -8,13 +8,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
 	_ "github.com/wzshiming/bridge/protocols/command"
 	_ "github.com/wzshiming/bridge/protocols/connect"
+	_ "github.com/wzshiming/bridge/protocols/emux"
 	_ "github.com/wzshiming/bridge/protocols/netcat"
+	_ "github.com/wzshiming/bridge/protocols/permuteproxy"
 	_ "github.com/wzshiming/bridge/protocols/shadowsocks"
+	_ "github.com/wzshiming/bridge/protocols/snappy"
 	_ "github.com/wzshiming/bridge/protocols/socks4"
 	_ "github.com/wzshiming/bridge/protocols/socks5"
 	_ "github.com/wzshiming/bridge/protocols/ssh"
@@ -27,6 +31,8 @@ import (
 	_ "github.com/wzshiming/anyproxy/proxies/sshproxy"
 
 	"github.com/wzshiming/anyproxy"
+	"github.com/wzshiming/permuteproxy"
+
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/logger"
 )
@@ -51,30 +57,48 @@ func newProxy(addr string) (uri string, err error) {
 	if err != nil {
 		return "", err
 	}
-	proxy, err := anyproxy.NewAnyProxy(ctx, []string{addr}, &anyproxy.Config{
-		Dialer:       &net.Dialer{},
-		ListenConfig: &net.ListenConfig{},
-	})
-	if err != nil {
-		return "", err
-	}
-	host := proxy.Match(u.Host)
-	listener, err := net.Listen("tcp", u.Host)
-	if err != nil {
-		return "", err
-	}
-	u.Host = listener.Addr().String()
-	go func() {
-		for {
-			conn, err := listener.Accept()
+	if strings.Contains(u.Scheme, "+") {
+		l := &permuteproxy.Proxy{
+			ListenConfig: &net.ListenConfig{},
+		}
+		dc, err := l.NewRunner(addr)
+		if err != nil {
+			return "", err
+		}
+		go func() {
+			err = dc.Run(ctx)
 			if err != nil {
-				logger.Std.Error(err, "accept")
+				logger.Std.Error(err, "run")
 				return
 			}
-			go host.ServeConn(conn)
+		}()
+		return addr, nil
+	} else {
+		proxy, err := anyproxy.NewAnyProxy(ctx, []string{addr}, &anyproxy.Config{
+			Dialer:       &net.Dialer{},
+			ListenConfig: &net.ListenConfig{},
+		})
+		if err != nil {
+			return "", err
 		}
-	}()
-	return u.String(), nil
+		host := proxy.Match(u.Host)
+		listener, err := net.Listen("tcp", u.Host)
+		if err != nil {
+			return "", err
+		}
+		u.Host = listener.Addr().String()
+		go func() {
+			for {
+				conn, err := listener.Accept()
+				if err != nil {
+					logger.Std.Error(err, "accept")
+					return
+				}
+				go host.ServeConn(conn)
+			}
+		}()
+		return u.String(), nil
+	}
 }
 
 var ProxyServer = []string{
@@ -86,6 +110,9 @@ var ProxyServer = []string{
 	"socks4://s4@127.0.0.1:0",
 	"socks5://s5:p@127.0.0.1:0",
 	"ssh://s:p@127.0.0.1:0",
+	"http+snappy://127.0.0.1:45670",
+	"socks4+snappy://127.0.0.1:45671",
+	"socks5+snappy://127.0.0.1:45672",
 }
 
 func init() {

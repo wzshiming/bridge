@@ -15,8 +15,9 @@ import (
 
 // BridgeChain is a bridger that supports multiple crossing of bridger.
 type BridgeChain struct {
-	DialerFunc func(dialer bridge.Dialer) bridge.Dialer
-	proto      map[string]bridge.Bridger
+	DialerFunc   func(dialer bridge.Dialer) bridge.Dialer
+	proto        map[string]bridge.Bridger
+	defaultProto bridge.Bridger
 }
 
 // NewBridgeChain create a new BridgeChain.
@@ -114,7 +115,10 @@ func (b *BridgeChain) dialOne(dialer bridge.Dialer, address string) (bridge.Dial
 	}
 	bridger, ok := b.proto[sch]
 	if !ok {
-		return nil, fmt.Errorf("unsupported protocol %q", sch)
+		if b.defaultProto == nil {
+			return nil, fmt.Errorf("unsupported protocol %q", sch)
+		}
+		bridger = b.defaultProto
 	}
 	return bridger.Bridge(dialer, address)
 }
@@ -123,4 +127,9 @@ func (b *BridgeChain) dialOne(dialer bridge.Dialer, address string) (bridge.Dial
 func (b *BridgeChain) Register(name string, bridger bridge.Bridger) error {
 	b.proto[name] = bridger
 	return nil
+}
+
+// RegisterDefault is register a default bridger for BridgeChain.
+func (b *BridgeChain) RegisterDefault(bridger bridge.Bridger) {
+	b.defaultProto = bridger
 }
