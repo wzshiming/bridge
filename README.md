@@ -99,7 +99,7 @@ or
 
 or
 
-[Docker image](https://hub.docker.com/r/wzshiming/bridge)
+[Image](https://github.com/wzshiming/bridge/pkgs/container/bridge%2Fbridge)
 
 ## License
 
