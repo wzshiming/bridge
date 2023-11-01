@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
@@ -62,7 +61,7 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 			io.ReadCloser
 			io.Writer
 		}{
-			ReadCloser: ioutil.NopCloser(os.Stdin),
+			ReadCloser: io.NopCloser(os.Stdin),
 			Writer:     os.Stdout,
 		}
 
