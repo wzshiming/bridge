@@ -91,7 +91,7 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 	if len(dial.LB) != 0 && dial.LB[0] == "-" {
 		return b.bridgeProxy(ctx, listenConfig, dialer, listen.LB)
 	} else {
-		return b.bridgeTCP(ctx, listenConfig, dialer, listen.LB, dial.LB)
+		return b.bridgeStream(ctx, listenConfig, dialer, listen.LB, dial.LB)
 	}
 }
 
@@ -103,7 +103,7 @@ func (b *Bridge) Bridge(ctx context.Context, listens, dials []string) error {
 	return b.BridgeWithConfig(ctx, conf[0])
 }
 
-func (b *Bridge) bridgeTCP(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, dials []string) error {
+func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, dials []string) error {
 	wg := sync.WaitGroup{}
 	listeners := make([]net.Listener, 0, len(listens))
 	for _, l := range listens {
