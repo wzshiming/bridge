@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/config"
@@ -27,12 +27,12 @@ import (
 )
 
 type Bridge struct {
-	logger logr.Logger
+	logger *slog.Logger
 	dump   bool
 	chain  *BridgeChain
 }
 
-func NewBridge(logger logr.Logger, dump bool) *Bridge {
+func NewBridge(logger *slog.Logger, dump bool) *Bridge {
 	return &Bridge{
 		logger: logger,
 		dump:   dump,
@@ -110,12 +110,12 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 		network, listen, ok := scheme.SplitSchemeAddr(l)
 		if !ok {
 			err := fmt.Errorf("unsupported protocol format %q", l)
-			b.logger.Error(err, "SplitSchemeAddr")
+			b.logger.Error("SplitSchemeAddr", "err", err)
 			return err
 		}
 		listener, err := netutils.Listen(ctx, listenConfig, network, listen)
 		if err != nil {
-			b.logger.Error(err, "Listen")
+			b.logger.Error("Listen", "err", err)
 			return err
 		}
 		listeners = append(listeners, listener)
@@ -149,7 +149,7 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 				raw, err := listener.Accept()
 				if err != nil {
 					if ignoreClosedErr(err) != nil {
-						b.logger.Error(err, "Accept")
+						b.logger.Error("Accept", "err", err)
 					}
 
 					for ctx.Err() == nil {
@@ -162,7 +162,7 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 
 						network, listen, ok := scheme.SplitSchemeAddr(l)
 						if !ok {
-							b.logger.Error(fmt.Errorf("unsupported protocol format %q", l), "")
+							b.logger.Error("unsupported protocol", "protocol", l)
 							return
 						}
 						listener, err = netutils.Listen(ctx, listenConfig, network, listen)
@@ -170,7 +170,7 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 							listeners[i] = listener
 							continue loop
 						}
-						b.logger.Error(err, "Relisten")
+						b.logger.Error("Relisten", "err", err)
 					}
 					return
 				}
@@ -178,7 +178,7 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), strings.Join(dials, "|"))
 				}
 				backoff = time.Second / 10
-				b.logger.V(1).Info("Connect", "remote_address", raw.RemoteAddr().String())
+				b.logger.Info("Connect", "remote_address", raw.RemoteAddr().String())
 				go b.stepIgnoreErr(ctx, dialer, raw, dials)
 			}
 		}(i, l)
@@ -204,7 +204,7 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 	for _, host := range hosts {
 		listener, err := netutils.Listen(ctx, listenConfig, "tcp", host)
 		if err != nil {
-			b.logger.Error(err, "Listen")
+			b.logger.Error("Listen", "err", err)
 			return err
 		}
 		listeners = append(listeners, listener)
@@ -240,7 +240,7 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 				raw, err := listener.Accept()
 				if err != nil {
 					if ignoreClosedErr(err) != nil {
-						b.logger.Error(err, "Accept")
+						b.logger.Error("Accept", "err", err)
 					}
 					for ctx.Err() == nil {
 						backoff <<= 1
@@ -255,7 +255,7 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 							listeners[i] = listener
 							continue loop
 						}
-						b.logger.Error(err, "Relisten")
+						b.logger.Error("Relisten", "err", err)
 					}
 					return
 				}
@@ -277,13 +277,13 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 						BytesPool:    pool.Bytes,
 					})
 					if err != nil {
-						b.logger.Error(err, "NewAnyProxy")
+						b.logger.Error("NewAnyProxy", "err", err)
 						return
 					}
 					h = svc.Match(host)
 				}
 				backoff = time.Second / 10
-				b.logger.V(1).Info("Connect", "remote_address", raw.RemoteAddr().String())
+				b.logger.Info("Connect", "remote_address", raw.RemoteAddr().String())
 				go h.ServeConn(raw)
 			}
 		}(i, host)
@@ -302,7 +302,7 @@ func ignoreClosedErr(err error) error {
 func (b *Bridge) stepIgnoreErr(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, dials []string) {
 	err := step(ctx, dialer, raw, dials)
 	if ignoreClosedErr(err) != nil {
-		b.logger.Error(err, "Step")
+		b.logger.Error("Step", "err", err)
 	}
 }
 

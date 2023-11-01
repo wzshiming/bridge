@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 	"syscall"
+	"log/slog"
 
 	_ "github.com/wzshiming/bridge/protocols/command"
 	_ "github.com/wzshiming/bridge/protocols/connect"
@@ -27,14 +28,11 @@ import (
 	_ "github.com/wzshiming/anyproxy/proxies/socks5"
 	_ "github.com/wzshiming/anyproxy/proxies/sshproxy"
 
-	"github.com/go-logr/logr"
-	"github.com/go-logr/zapr"
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/config"
 	"github.com/wzshiming/bridge/logger"
 	"github.com/wzshiming/notify"
-	"go.uber.org/zap"
 )
 
 var (
@@ -64,14 +62,6 @@ func init() {
 	flag.BoolVarP(&dump, "debug", "d", dump, "Output the communication data.")
 	flag.Parse()
 
-	logConfig := zap.NewDevelopmentConfig()
-	zapLog, err := logConfig.Build()
-	if err != nil {
-		logger.Std.Error(err, "who watches the watchmen")
-		os.Exit(1)
-	}
-	logger.Std = zapr.NewLogger(zapLog)
-
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTERM}
 	notify.OnceSlice(signals, func() {
 		globalCancel()
@@ -94,14 +84,14 @@ func main() {
 		tasks, err = config.LoadConfig(configs...)
 		if err != nil {
 			printDefaults()
-			logger.Std.Error(err, "LoadConfig")
+			slog.Error("LoadConfig", "err", err)
 			return
 		}
 	} else {
 		tasks, err = config.LoadConfigWithArgs(listens, dials)
 		if err != nil {
 			printDefaults()
-			logger.Std.Error(err, "LoadConfigWithArgs")
+			slog.Error("LoadConfigWithArgs", "err", err)
 			return
 		}
 	}
@@ -123,18 +113,18 @@ func main() {
 	return
 }
 
-func run(ctx context.Context, log logr.Logger, tasks []config.Chain) {
+func run(ctx context.Context, log *slog.Logger, tasks []config.Chain) {
 	var wg sync.WaitGroup
 	wg.Add(len(tasks))
 	for _, task := range tasks {
 		go func(task config.Chain) {
 			defer wg.Done()
-			log := log.WithValues("chains", task)
+			log := log.With("chains", task)
 			log.Info(chain.ShowChainWithConfig(task))
 			b := chain.NewBridge(log, dump)
 			err := b.BridgeWithConfig(ctx, task)
 			if err != nil {
-				log.Error(err, "BridgeWithConfig")
+				log.Error("BridgeWithConfig", "err", err)
 			}
 		}(task)
 	}

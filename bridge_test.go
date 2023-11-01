@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"log/slog"
 
 	_ "github.com/wzshiming/bridge/protocols/command"
 	_ "github.com/wzshiming/bridge/protocols/connect"
@@ -68,7 +69,7 @@ func newProxy(addr string) (uri string, err error) {
 		go func() {
 			err = dc.Run(ctx)
 			if err != nil {
-				logger.Std.Error(err, "run")
+				slog.Error("run", "err", err)
 				return
 			}
 		}()
@@ -91,7 +92,7 @@ func newProxy(addr string) (uri string, err error) {
 			for {
 				conn, err := listener.Accept()
 				if err != nil {
-					logger.Std.Error(err, "accept")
+					slog.Error("accept", "err", err)
 					return
 				}
 				go host.ServeConn(conn)

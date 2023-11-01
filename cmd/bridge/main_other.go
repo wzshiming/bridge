@@ -8,14 +8,14 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/config"
 	"github.com/wzshiming/notify"
 )
 
-func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, configs []string) {
+func runWithReload(ctx context.Context, log *slog.Logger, tasks []config.Chain, configs []string) {
 	reloadCn := make(chan struct{}, 1)
 	notify.On(syscall.SIGHUP, func() {
 		select {
@@ -35,11 +35,11 @@ func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, c
 			return
 		case <-reloadCn:
 		}
-		log := log.WithValues("reload_count", count)
+		log := log.With("reload_count", count)
 		tasks, err := config.LoadConfig(configs...)
 		if err != nil {
 			for {
-				log.Error(err, "LoadConfig")
+				log.Error("LoadConfig", "err", err)
 				log.Info("Try reload again after 1 second")
 				time.Sleep(time.Second)
 				tasks, err = config.LoadConfig(configs...)
@@ -63,13 +63,13 @@ func runWithReload(ctx context.Context, log logr.Logger, tasks []config.Chain, c
 			wg.Add(1)
 			go func(ctx context.Context, task config.Chain) {
 				defer wg.Done()
-				log := log.WithValues("chains", task)
+				log := log.With("chains", task)
 				log.Info(chain.ShowChainWithConfig(task))
 				for ctx.Err() == nil {
 					b := chain.NewBridge(log, dump)
 					err := b.BridgeWithConfig(ctx, task)
 					if err != nil {
-						log.Error(err, "BridgeWithConfig")
+						log.Error("BridgeWithConfig", "err", err)
 					}
 					time.Sleep(time.Second)
 				}

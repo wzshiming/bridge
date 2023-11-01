@@ -2,20 +2,19 @@ package logger
 
 import (
 	"fmt"
-
-	"github.com/go-logr/logr"
+	"log/slog"
 )
 
-var Std = logr.Discard()
+var Std = slog.Default()
 
-func Wrap(logger logr.Logger, name string) *wrap {
+func Wrap(logger *slog.Logger, name string) *wrap {
 	return &wrap{
-		Logger: logger.WithName(name),
+		Logger: logger.WithGroup(name),
 	}
 }
 
 type wrap struct {
-	logr.Logger
+	*slog.Logger
 }
 
 func (w wrap) Println(v ...interface{}) {
