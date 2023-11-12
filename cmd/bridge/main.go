@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"sync"
 	"syscall"
@@ -44,6 +45,7 @@ var (
 	idleTimeout       time.Duration
 	dials             []string
 	dump              bool
+	pprofAddress      string
 )
 
 const defaults = `Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh proxycommand
@@ -62,6 +64,7 @@ func init() {
 	flag.StringSliceVarP(&listens, "bind", "b", nil, "The first is the listening address, and then the proxy through which the listening address passes.\nIf it is not filled in, it is redirected to the pipeline.\nonly ssh and local support listening, so the last proxy must be ssh.")
 	flag.StringSliceVarP(&dials, "proxy", "p", nil, "The first is the dial-up address, followed by the proxy through which the dial-up address passes.")
 	flag.DurationVar(&idleTimeout, "idle-timeout", 0, "The idle timeout for connections.")
+	flag.StringVar(&pprofAddress, "pprof", "", "The pprof address.")
 	flag.BoolVarP(&dump, "debug", "d", dump, "Output the communication data.")
 	flag.Parse()
 
@@ -81,6 +84,14 @@ func printDefaults() {
 }
 
 func main() {
+	if pprofAddress != "" {
+		go func() {
+			err := http.ListenAndServe(pprofAddress, http.DefaultServeMux)
+			if err != nil {
+				logger.Std.Error("ListenAndServe", "err", err)
+			}
+		}()
+	}
 	var tasks []config.Chain
 	var err error
 	if len(configs) != 0 {
