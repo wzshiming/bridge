@@ -5,10 +5,10 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"syscall"
 	"time"
-	"log/slog"
 
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/config"

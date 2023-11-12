@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"math/rand"
 	"net"
 	"os"
@@ -11,12 +12,12 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"log/slog"
 
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/config"
 	"github.com/wzshiming/bridge/internal/dump"
+	"github.com/wzshiming/bridge/internal/idle"
 	"github.com/wzshiming/bridge/internal/netutils"
 	"github.com/wzshiming/bridge/internal/pool"
 	"github.com/wzshiming/bridge/internal/scheme"
@@ -88,9 +89,9 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 	}
 
 	if len(dial.LB) != 0 && dial.LB[0] == "-" {
-		return b.bridgeProxy(ctx, listenConfig, dialer, listen.LB)
+		return b.bridgeProxy(ctx, listenConfig, dialer, config.IdleTimeout, listen.LB)
 	} else {
-		return b.bridgeStream(ctx, listenConfig, dialer, listen.LB, dial.LB)
+		return b.bridgeStream(ctx, listenConfig, dialer, config.IdleTimeout, listen.LB, dial.LB)
 	}
 }
 
@@ -102,7 +103,7 @@ func (b *Bridge) Bridge(ctx context.Context, listens, dials []string) error {
 	return b.BridgeWithConfig(ctx, conf[0])
 }
 
-func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string, dials []string) error {
+func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string, dials []string) error {
 	wg := sync.WaitGroup{}
 	listeners := make([]net.Listener, 0, len(listens))
 	for _, l := range listens {
@@ -176,6 +177,9 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 				if b.dump {
 					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), strings.Join(dials, "|"))
 				}
+				if idleTimeout != 0 {
+					raw = idle.NewIdleConn(raw, idleTimeout)
+				}
 				backoff = time.Second / 10
 				b.logger.Info("Connect", "remote_address", raw.RemoteAddr().String())
 				go b.stepIgnoreErr(ctx, dialer, raw, dials)
@@ -186,7 +190,7 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 	return nil
 }
 
-func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, listens []string) error {
+func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string) error {
 	wg := sync.WaitGroup{}
 	svc, err := anyproxy.NewAnyProxy(ctx, listens, &anyproxy.Config{
 		Dialer:       dialer,
@@ -280,6 +284,9 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 						return
 					}
 					h = svc.Match(host)
+				}
+				if idleTimeout != 0 {
+					raw = idle.NewIdleConn(raw, idleTimeout)
 				}
 				backoff = time.Second / 10
 				b.logger.Info("Connect", "remote_address", raw.RemoteAddr().String())

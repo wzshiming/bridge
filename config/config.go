@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/wzshiming/bridge/internal/scheme"
 )
@@ -78,8 +79,9 @@ type Config struct {
 }
 
 type Chain struct {
-	Bind  []Node `json:"bind"`
-	Proxy []Node `json:"proxy"`
+	Bind        []Node        `json:"bind"`
+	Proxy       []Node        `json:"proxy"`
+	IdleTimeout time.Duration `json:"idle_timeout"`
 }
 
 func (c Chain) Verification() error {

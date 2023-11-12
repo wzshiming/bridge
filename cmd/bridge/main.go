@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
 	"syscall"
-	"log/slog"
+	"time"
 
 	_ "github.com/wzshiming/bridge/protocols/command"
 	_ "github.com/wzshiming/bridge/protocols/connect"
@@ -40,6 +41,7 @@ var (
 	configs           []string
 	toConfig          bool
 	listens           []string
+	idleTimeout       time.Duration
 	dials             []string
 	dump              bool
 )
@@ -59,6 +61,7 @@ func init() {
 	flag.BoolVarP(&toConfig, "to-config", "t", false, "args to config")
 	flag.StringSliceVarP(&listens, "bind", "b", nil, "The first is the listening address, and then the proxy through which the listening address passes.\nIf it is not filled in, it is redirected to the pipeline.\nonly ssh and local support listening, so the last proxy must be ssh.")
 	flag.StringSliceVarP(&dials, "proxy", "p", nil, "The first is the dial-up address, followed by the proxy through which the dial-up address passes.")
+	flag.DurationVar(&idleTimeout, "idle-timeout", 0, "The idle timeout for connections.")
 	flag.BoolVarP(&dump, "debug", "d", dump, "Output the communication data.")
 	flag.Parse()
 
@@ -117,6 +120,9 @@ func run(ctx context.Context, log *slog.Logger, tasks []config.Chain) {
 	var wg sync.WaitGroup
 	wg.Add(len(tasks))
 	for _, task := range tasks {
+		if task.IdleTimeout == 0 {
+			task.IdleTimeout = idleTimeout
+		}
 		go func(task config.Chain) {
 			defer wg.Done()
 			log := log.With("chains", task)

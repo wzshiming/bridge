@@ -2,10 +2,10 @@ package local
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"os"
 	"strings"
-	"log/slog"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/internal/netutils"
