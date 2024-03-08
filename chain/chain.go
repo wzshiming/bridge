@@ -4,13 +4,17 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/config"
 	"github.com/wzshiming/bridge/internal/scheme"
+	"github.com/wzshiming/geario"
 	"github.com/wzshiming/schedialer"
+	"github.com/wzshiming/schedialer/plugins/flow"
 	"github.com/wzshiming/schedialer/plugins/probe"
 	"github.com/wzshiming/schedialer/plugins/random"
+	"github.com/wzshiming/schedialer/plugins/rate"
 )
 
 // BridgeChain is a bridger that supports multiple crossing of bridger.
@@ -80,10 +84,12 @@ func (b *BridgeChain) Dial(dialer bridge.Dialer, addresses []string, probeUrl st
 		return b.dialOne(dialer, addresses[0])
 	}
 	plugins := []schedialer.Plugin{
-		random.NewRandom(),
+		random.NewRandom(1),
+		flow.NewFlow(40),
+		rate.NewRate(40),
 	}
 	if probeUrl != "" {
-		plugins = append(plugins, probe.NewProbe(probeUrl))
+		plugins = append(plugins, probe.NewProbe(100, probeUrl))
 	}
 	return b.dialMulti(dialer, addresses, plugins)
 }
@@ -99,9 +105,21 @@ func (b *BridgeChain) dialMulti(dialer bridge.Dialer, addresses []string, plugin
 		if err != nil {
 			return nil, err
 		}
+
+		g := geario.NewGear(1*time.Second, -1)
 		proxy := schedialer.Proxy{
 			Name:   address,
-			Dialer: dial,
+			Dialer: geario.DialGear(dial, g, g),
+
+			Aver: func() uint64 {
+				return uint64(g.Aver())
+			},
+			MaxAver: func() uint64 {
+				return uint64(g.MaxAver())
+			},
+			Total: func() uint64 {
+				return uint64(g.Total())
+			},
 		}
 		plugin.AddProxy(ctx, &proxy)
 	}

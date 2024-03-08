@@ -10,11 +10,12 @@ require (
 	github.com/wzshiming/cmux v0.3.3
 	github.com/wzshiming/commandproxy v0.2.0
 	github.com/wzshiming/emux v0.2.1
+	github.com/wzshiming/geario v0.0.0-20240308093553-a996e3817533
 	github.com/wzshiming/hostmatcher v0.0.1
 	github.com/wzshiming/httpproxy v0.5.5
 	github.com/wzshiming/notify v0.1.1
 	github.com/wzshiming/permuteproxy v0.0.2
-	github.com/wzshiming/schedialer v0.2.1
+	github.com/wzshiming/schedialer v0.3.0
 	github.com/wzshiming/shadowsocks v0.4.0
 	github.com/wzshiming/socks4 v0.3.2
 	github.com/wzshiming/socks5 v0.4.3
