@@ -11,6 +11,7 @@ import (
 	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/geario"
 	"github.com/wzshiming/schedialer"
+	"github.com/wzshiming/schedialer/plugins/backoff"
 	"github.com/wzshiming/schedialer/plugins/flow"
 	"github.com/wzshiming/schedialer/plugins/probe"
 	"github.com/wzshiming/schedialer/plugins/random"
@@ -84,6 +85,7 @@ func (b *BridgeChain) Dial(dialer bridge.Dialer, addresses []string, probeUrl st
 		return b.dialOne(dialer, addresses[0])
 	}
 	plugins := []schedialer.Plugin{
+		backoff.NewBackoff(),
 		random.NewRandom(1),
 		flow.NewFlow(40),
 		rate.NewRate(40),
