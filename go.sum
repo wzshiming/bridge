@@ -26,8 +26,8 @@ github.com/wzshiming/notify v0.1.1 h1:rJXoszrkNglhCVyn/IfW500f5cW03q1q7YzL8hsLch
 github.com/wzshiming/notify v0.1.1/go.mod h1:SFhsQKZJznzsDcj/Qfo9A65k5IRcpUrpgbLRzZEa/DI=
 github.com/wzshiming/permuteproxy v0.0.2 h1:svedMueotlxJk9oJfA0gs8WzRYOdgd0DER9XvKpjwlY=
 github.com/wzshiming/permuteproxy v0.0.2/go.mod h1:Ny08A1JbuljB8FeJAOiB7dfvRGCVD8PB9hwrALIvYI8=
-github.com/wzshiming/schedialer v0.2.1 h1:DnAv8ta2UuWcvRy9sYwSt69rTuE3/kiCgwX6CiN5y4M=
-github.com/wzshiming/schedialer v0.2.1/go.mod h1:TvVxg4QZIBTJzRfmL/G7g6CzynFQKPmtXtSeJ2c4Lus=
+github.com/wzshiming/schedialer v0.6.0 h1:U3plhiljDYO0q+3nnK9ntcfSl46HSDauqe2UBm35X7Y=
+github.com/wzshiming/schedialer v0.6.0/go.mod h1:TvVxg4QZIBTJzRfmL/G7g6CzynFQKPmtXtSeJ2c4Lus=
 github.com/wzshiming/shadowsocks v0.4.0 h1:Yi+4J/DK15qdKlssNEMoWjtmc8wyY8ByIBbC5Ft29bQ=
 github.com/wzshiming/shadowsocks v0.4.0/go.mod h1:xYRRSKR+hTihSDUOE+evavx0wkLVODTWVXEcz5vosoE=
 github.com/wzshiming/socks4 v0.3.2 h1:w87nwfgRWteVwIH39nqTur8c+2dcODeLgLrWspcUkSc=

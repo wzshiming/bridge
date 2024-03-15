@@ -10,7 +10,7 @@ import (
 	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/schedialer"
 	"github.com/wzshiming/schedialer/plugins/probe"
-	"github.com/wzshiming/schedialer/plugins/random"
+	"github.com/wzshiming/schedialer/plugins/roundrobin"
 )
 
 // BridgeChain is a bridger that supports multiple crossing of bridger.
@@ -80,10 +80,10 @@ func (b *BridgeChain) Dial(dialer bridge.Dialer, addresses []string, probeUrl st
 		return b.dialOne(dialer, addresses[0])
 	}
 	plugins := []schedialer.Plugin{
-		random.NewRandom(),
+		roundrobin.NewRoundRobin(100),
 	}
 	if probeUrl != "" {
-		plugins = append(plugins, probe.NewProbe(probeUrl))
+		plugins = append(plugins, probe.NewProbe(100, probeUrl))
 	}
 	return b.dialMulti(dialer, addresses, plugins)
 }
