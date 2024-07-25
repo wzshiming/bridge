@@ -87,10 +87,10 @@ Usage: bridge [-d] \
   -p, --proxy strings   The first is the dial-up address, followed by the proxy through which the dial-up address passes.
 ```
 
-## Install
+## Installation
 
 ``` shell
-go get -u -v github.com/wzshiming/bridge/cmd/bridge
+go install github.com/wzshiming/bridge/cmd/bridge@latest
 ```
 
 or
