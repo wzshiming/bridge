@@ -13,7 +13,7 @@ import (
 )
 
 // EMux emux:?handshake=EMUX%20
-func EMux(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
+func EMux(ctx context.Context, dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {
 		dialer = local.LOCAL
 	}
@@ -21,7 +21,6 @@ func EMux(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
 	d := emux.NewDialer(ctx, dialer)
 	d.Instruction = *instruction
 	d.BytesPool = pool.Bytes

@@ -17,7 +17,7 @@ var (
 )
 
 // COMMAND cmd:shell
-func COMMAND(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
+func COMMAND(ctx context.Context, dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 	if dialer == nil {
 		dialer = local.LOCAL
 	}

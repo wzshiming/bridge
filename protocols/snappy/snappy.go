@@ -10,7 +10,7 @@ import (
 )
 
 // Snappy snappy:
-func Snappy(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
+func Snappy(ctx context.Context, dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 	if dialer == nil {
 		dialer = local.LOCAL
 	}

@@ -49,7 +49,7 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 	dials := config.Proxy[1:]
 
 	if len(dials) != 0 {
-		d, err := b.chain.BridgeChainWithConfig(local.LOCAL, dials...)
+		d, err := b.chain.BridgeChainWithConfig(ctx, local.LOCAL, dials...)
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 	listens := config.Bind[1:]
 
 	if len(listens) != 0 {
-		d, err := b.chain.BridgeChainWithConfig(local.LOCAL, listens...)
+		d, err := b.chain.BridgeChainWithConfig(ctx, local.LOCAL, listens...)
 		if err != nil {
 			return err
 		}

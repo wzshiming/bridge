@@ -12,7 +12,7 @@ import (
 )
 
 // NetCat nc: [prefix]
-func NetCat(dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
+func NetCat(ctx context.Context, dialer bridge.Dialer, cmd string) (bridge.Dialer, error) {
 	if dialer == nil {
 		dialer = local.LOCAL
 	}
@@ -35,17 +35,17 @@ type netCat struct {
 	unixDialer   bridge.Dialer
 	tcpListener  bridge.ListenConfig
 	unixListener bridge.ListenConfig
-	command      func(dialer bridge.Dialer, cmd string) (bridge.Dialer, error)
+	command      func(ctx context.Context, dialer bridge.Dialer, cmd string) (bridge.Dialer, error)
 }
 
-func (n *netCat) exec(cmd string) (bridge.Dialer, error) {
-	return n.command(n.dialer, strings.Join([]string{"cmd:", n.prefix, cmd}, " "))
+func (n *netCat) exec(ctx context.Context, cmd string) (bridge.Dialer, error) {
+	return n.command(ctx, n.dialer, strings.Join([]string{"cmd:", n.prefix, cmd}, " "))
 }
 
 func (n *netCat) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	if network == "unix" {
 		if n.unixDialer == nil {
-			d, err := n.exec("nc -U %h")
+			d, err := n.exec(ctx, "nc -U %h")
 			if err != nil {
 				return nil, err
 			}
@@ -61,7 +61,7 @@ func (n *netCat) DialContext(ctx context.Context, network, address string) (net.
 		case "tcp6":
 			cmd = "nc -6 %h %p"
 		}
-		d, err := n.exec(cmd)
+		d, err := n.exec(ctx, cmd)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +73,7 @@ func (n *netCat) DialContext(ctx context.Context, network, address string) (net.
 func (n *netCat) Listen(ctx context.Context, network, address string) (net.Listener, error) {
 	if network == "unix" {
 		if n.unixListener == nil {
-			d, err := n.exec("nc -Ul %h")
+			d, err := n.exec(ctx, "nc -Ul %h")
 			if err != nil {
 				return nil, err
 			}
@@ -89,7 +89,7 @@ func (n *netCat) Listen(ctx context.Context, network, address string) (net.Liste
 		case "tcp6":
 			cmd = "nc -6l %h %p"
 		}
-		d, err := n.exec(cmd)
+		d, err := n.exec(ctx, cmd)
 		if err != nil {
 			return nil, err
 		}

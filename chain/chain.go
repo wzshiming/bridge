@@ -29,12 +29,12 @@ func NewBridgeChain() *BridgeChain {
 }
 
 // BridgeChain is multiple crossing of bridge.
-func (b *BridgeChain) BridgeChain(dialer bridge.Dialer, addresses ...string) (bridge.Dialer, error) {
+func (b *BridgeChain) BridgeChain(ctx context.Context, dialer bridge.Dialer, addresses ...string) (bridge.Dialer, error) {
 	if len(addresses) == 0 {
 		return dialer, nil
 	}
 	address := addresses[len(addresses)-1]
-	d, err := b.Dial(dialer, strings.Split(address, "|"), "")
+	d, err := b.Dial(ctx, dialer, strings.Split(address, "|"), "")
 	if err != nil {
 		return nil, err
 	}
@@ -42,15 +42,15 @@ func (b *BridgeChain) BridgeChain(dialer bridge.Dialer, addresses ...string) (br
 	if len(addresses) == 0 {
 		return d, nil
 	}
-	return b.BridgeChain(d, addresses...)
+	return b.BridgeChain(ctx, d, addresses...)
 }
 
 // BridgeChainWithConfig is multiple crossing of bridge.
-func (b *BridgeChain) BridgeChainWithConfig(dialer bridge.Dialer, addresses ...config.Node) (bridge.Dialer, error) {
+func (b *BridgeChain) BridgeChainWithConfig(ctx context.Context, dialer bridge.Dialer, addresses ...config.Node) (bridge.Dialer, error) {
 	if len(addresses) == 0 {
 		return dialer, nil
 	}
-	d, err := b.bridgeChainWithConfig(dialer, addresses...)
+	d, err := b.bridgeChainWithConfig(ctx, dialer, addresses...)
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +59,12 @@ func (b *BridgeChain) BridgeChainWithConfig(dialer bridge.Dialer, addresses ...c
 	}
 	return d, nil
 }
-func (b *BridgeChain) bridgeChainWithConfig(dialer bridge.Dialer, addresses ...config.Node) (bridge.Dialer, error) {
+func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.Dialer, addresses ...config.Node) (bridge.Dialer, error) {
 	if len(addresses) == 0 {
 		return dialer, nil
 	}
 	address := addresses[len(addresses)-1]
-	d, err := b.Dial(dialer, address.LB, address.Probe)
+	d, err := b.Dial(ctx, dialer, address.LB, address.Probe)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +72,12 @@ func (b *BridgeChain) bridgeChainWithConfig(dialer bridge.Dialer, addresses ...c
 	if len(addresses) == 0 {
 		return d, nil
 	}
-	return b.bridgeChainWithConfig(d, addresses...)
+	return b.bridgeChainWithConfig(ctx, d, addresses...)
 }
 
-func (b *BridgeChain) Dial(dialer bridge.Dialer, addresses []string, probeUrl string) (bridge.Dialer, error) {
+func (b *BridgeChain) Dial(ctx context.Context, dialer bridge.Dialer, addresses []string, probeUrl string) (bridge.Dialer, error) {
 	if len(addresses) == 1 {
-		return b.dialOne(dialer, addresses[0])
+		return b.dialOne(ctx, dialer, addresses[0])
 	}
 	plugins := []schedialer.Plugin{
 		roundrobin.NewRoundRobin(100),
@@ -85,17 +85,9 @@ func (b *BridgeChain) Dial(dialer bridge.Dialer, addresses []string, probeUrl st
 	if probeUrl != "" {
 		plugins = append(plugins, probe.NewProbe(100, probeUrl))
 	}
-	return b.dialMulti(dialer, addresses, plugins)
-}
-
-func (b *BridgeChain) dialMulti(dialer bridge.Dialer, addresses []string, plugins []schedialer.Plugin) (bridge.Dialer, error) {
-	if len(addresses) == 1 {
-		return b.dialOne(dialer, addresses[0])
-	}
-	ctx := context.Background()
 	plugin := schedialer.NewPlugins(plugins...)
 	for _, address := range addresses {
-		dial, err := b.dialOne(dialer, address)
+		dial, err := b.dialOne(ctx, dialer, address)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +100,7 @@ func (b *BridgeChain) dialMulti(dialer bridge.Dialer, addresses []string, plugin
 	return schedialer.NewSchedialer(plugin), nil
 }
 
-func (b *BridgeChain) dialOne(dialer bridge.Dialer, address string) (bridge.Dialer, error) {
+func (b *BridgeChain) dialOne(ctx context.Context, dialer bridge.Dialer, address string) (bridge.Dialer, error) {
 	sch, _, ok := scheme.SplitSchemeAddr(address)
 	if !ok {
 		return nil, fmt.Errorf("unsupported protocol format %q", address)
@@ -120,7 +112,7 @@ func (b *BridgeChain) dialOne(dialer bridge.Dialer, address string) (bridge.Dial
 		}
 		bridger = b.defaultProto
 	}
-	return bridger.Bridge(dialer, address)
+	return bridger.Bridge(ctx, dialer, address)
 }
 
 // Register is register a new bridger for BridgeChain.

@@ -1,6 +1,8 @@
 package shadowsocks
 
 import (
+	"context"
+
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/shadowsocks"
@@ -8,7 +10,7 @@ import (
 )
 
 // ShadowSocks ss://{cipher}:{password}@{address}
-func ShadowSocks(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
+func ShadowSocks(ctx context.Context, dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {
 		dialer = local.LOCAL
 	}

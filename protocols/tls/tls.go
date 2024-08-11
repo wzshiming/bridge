@@ -11,7 +11,7 @@ import (
 )
 
 // TLS tls:[opaque]
-func TLS(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
+func TLS(ctx context.Context, dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {
 		dialer = local.LOCAL
 	}

@@ -1,12 +1,14 @@
 package connect
 
 import (
+	"context"
+
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/httpproxy"
 )
 
 // CONNECT https?://[username:password@]{address}
-func CONNECT(dialer bridge.Dialer, address string) (bridge.Dialer, error) {
+func CONNECT(ctx context.Context, dialer bridge.Dialer, address string) (bridge.Dialer, error) {
 	d, err := httpproxy.NewDialer(address)
 	if err != nil {
 		return nil, err

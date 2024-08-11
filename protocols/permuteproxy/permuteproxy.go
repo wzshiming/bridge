@@ -1,6 +1,8 @@
 package permuteproxy
 
 import (
+	"context"
+
 	"github.com/wzshiming/permuteproxy"
 	"github.com/wzshiming/permuteproxy/protocols/local"
 
@@ -16,7 +18,7 @@ import (
 	"github.com/wzshiming/bridge"
 )
 
-func PermuteProxy(dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
+func PermuteProxy(ctx context.Context, dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	l := &permuteproxy.Proxy{
 		Dialer: local.LOCAL,
 	}
