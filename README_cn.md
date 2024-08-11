@@ -88,7 +88,7 @@ Usage: bridge [-d] \
 ## 安装
 
 ``` shell
-go get -u -v github.com/wzshiming/bridge/cmd/bridge
+go install github.com/wzshiming/bridge/cmd/bridge@latest
 ```
 
 or
