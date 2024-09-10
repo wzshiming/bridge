@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 
 	"github.com/wzshiming/bridge"
@@ -80,7 +81,7 @@ func (b *BridgeChain) Dial(ctx context.Context, dialer bridge.Dialer, addresses 
 		return b.dialOne(ctx, dialer, addresses[0])
 	}
 	plugins := []schedialer.Plugin{
-		roundrobin.NewRoundRobin(100),
+		roundrobin.NewRoundRobinWithIndex(100, rand.Uint64()%uint64(len(addresses))),
 	}
 	if probeUrl != "" {
 		plugins = append(plugins, probe.NewProbe(100, probeUrl))
