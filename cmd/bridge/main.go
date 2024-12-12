@@ -136,7 +136,6 @@ func run(ctx context.Context, log *slog.Logger, tasks []config.Chain) {
 		}
 		go func(task config.Chain) {
 			defer wg.Done()
-			log := log.With("chains", task)
 			log.Info(chain.ShowChainWithConfig(task))
 			b := chain.NewBridge(log, dump)
 			err := b.BridgeWithConfig(ctx, task)

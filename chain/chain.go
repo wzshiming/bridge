@@ -2,16 +2,18 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"math/rand"
+	"math"
+	"net"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/config"
 	"github.com/wzshiming/bridge/internal/scheme"
-	"github.com/wzshiming/schedialer"
-	"github.com/wzshiming/schedialer/plugins/probe"
-	"github.com/wzshiming/schedialer/plugins/roundrobin"
+	"github.com/wzshiming/bridge/logger"
 )
 
 // BridgeChain is a bridger that supports multiple crossing of bridger.
@@ -19,13 +21,17 @@ type BridgeChain struct {
 	DialerFunc   func(dialer bridge.Dialer) bridge.Dialer
 	proto        map[string]bridge.Bridger
 	defaultProto bridge.Bridger
+
+	backoffCount map[string]uint64
+	mutex        sync.Mutex
 }
 
 // NewBridgeChain create a new BridgeChain.
 func NewBridgeChain() *BridgeChain {
 	return &BridgeChain{
-		proto:      map[string]bridge.Bridger{},
-		DialerFunc: NewEnvDialer,
+		proto:        map[string]bridge.Bridger{},
+		DialerFunc:   NewEnvDialer,
+		backoffCount: map[string]uint64{},
 	}
 }
 
@@ -35,7 +41,7 @@ func (b *BridgeChain) BridgeChain(ctx context.Context, dialer bridge.Dialer, add
 		return dialer, nil
 	}
 	address := addresses[len(addresses)-1]
-	d, err := b.Dial(ctx, dialer, strings.Split(address, "|"), "")
+	d, err := b.multiDial(ctx, dialer, strings.Split(address, "|"))
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +71,7 @@ func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.D
 		return dialer, nil
 	}
 	address := addresses[len(addresses)-1]
-	d, err := b.Dial(ctx, dialer, address.LB, address.Probe)
+	d, err := b.multiDial(ctx, dialer, address.LB)
 	if err != nil {
 		return nil, err
 	}
@@ -76,32 +82,16 @@ func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.D
 	return b.bridgeChainWithConfig(ctx, d, addresses...)
 }
 
-func (b *BridgeChain) Dial(ctx context.Context, dialer bridge.Dialer, addresses []string, probeUrl string) (bridge.Dialer, error) {
-	if len(addresses) == 1 {
-		return b.dialOne(ctx, dialer, addresses[0])
+func (b *BridgeChain) multiDial(ctx context.Context, dialer bridge.Dialer, addresses []string) (bridge.Dialer, error) {
+	useCount := &backoffManager{
+		addresses: addresses,
+		dialer:    dialer,
+		bc:        b,
 	}
-	plugins := []schedialer.Plugin{
-		roundrobin.NewRoundRobinWithIndex(100, rand.Uint64()%uint64(len(addresses))),
-	}
-	if probeUrl != "" {
-		plugins = append(plugins, probe.NewProbe(100, probeUrl))
-	}
-	plugin := schedialer.NewPlugins(plugins...)
-	for _, address := range addresses {
-		dial, err := b.dialOne(ctx, dialer, address)
-		if err != nil {
-			return nil, err
-		}
-		proxy := schedialer.Proxy{
-			Name:   address,
-			Dialer: dial,
-		}
-		plugin.AddProxy(ctx, &proxy)
-	}
-	return schedialer.NewSchedialer(plugin), nil
+	return useCount, nil
 }
 
-func (b *BridgeChain) dialOne(ctx context.Context, dialer bridge.Dialer, address string) (bridge.Dialer, error) {
+func (b *BridgeChain) singleDial(ctx context.Context, dialer bridge.Dialer, address string) (bridge.Dialer, error) {
 	sch, _, ok := scheme.SplitSchemeAddr(address)
 	if !ok {
 		return nil, fmt.Errorf("unsupported protocol format %q", address)
@@ -125,4 +115,82 @@ func (b *BridgeChain) Register(name string, bridger bridge.Bridger) error {
 // RegisterDefault is register a default bridger for BridgeChain.
 func (b *BridgeChain) RegisterDefault(bridger bridge.Bridger) {
 	b.defaultProto = bridger
+}
+
+type backoffManager struct {
+	addresses []string
+	dialer    bridge.Dialer
+
+	bc *BridgeChain
+}
+
+func (u *backoffManager) useLeastAndCount(addresses []string) string {
+	if len(addresses) == 1 {
+		return addresses[0]
+	}
+	min := uint64(math.MaxUint64)
+
+	u.bc.mutex.Lock()
+	defer u.bc.mutex.Unlock()
+
+	var minAddress string
+	for _, address := range addresses {
+		if u.bc.backoffCount[address] < min {
+			min = u.bc.backoffCount[address]
+			minAddress = address
+		}
+	}
+	u.bc.backoffCount[minAddress]++
+	return minAddress
+}
+
+func (u *backoffManager) backoff(address string, count uint64) {
+	u.bc.mutex.Lock()
+	defer u.bc.mutex.Unlock()
+	u.bc.backoffCount[address] += count
+}
+
+func (u *backoffManager) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	var errs []error
+
+	timeout := time.Second * 10
+	dl, ok := ctx.Deadline()
+	if ok {
+		timeout = time.Until(dl)
+	}
+
+	period := timeout / time.Duration(len(u.addresses))
+	if period < time.Second {
+		period = time.Second
+	} else if period > 5*time.Second {
+		period = 5 * time.Second
+	}
+
+	for i := 0; i < len(u.addresses); i++ {
+		addr := u.useLeastAndCount(u.addresses)
+
+		ctx, cancel := context.WithTimeout(ctx, period)
+
+		dialer, err := u.bc.singleDial(ctx, u.dialer, addr)
+		if err != nil {
+			errs = append(errs, err)
+			logger.Std.Warn("failed dial", "err", err, "previous", addr)
+			cancel()
+			u.backoff(addr, 10)
+			continue
+		}
+		conn, err := dialer.DialContext(ctx, network, address)
+		if err != nil {
+			errs = append(errs, err)
+			logger.Std.Warn("failed dial target", "err", err, "previous", addr, "target", address)
+			cancel()
+			u.backoff(addr, 5)
+			continue
+		}
+
+		logger.Std.Info("success dial target", "previous", addr, "target", address)
+		cancel()
+		return conn, nil
+	}
+	return nil, fmt.Errorf("all addresses are failed: %w", errors.Join(errs...))
 }
