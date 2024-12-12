@@ -100,8 +100,7 @@ func (c Chain) Unique() string {
 }
 
 type Node struct {
-	Probe string   `json:"probe"`
-	LB    []string `json:"lb"`
+	LB []string `json:"lb"`
 }
 
 func (m Node) MarshalJSON() ([]byte, error) {
