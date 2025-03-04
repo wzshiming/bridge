@@ -63,7 +63,6 @@ func runWithReload(ctx context.Context, log *slog.Logger, tasks []config.Chain, 
 			wg.Add(1)
 			go func(ctx context.Context, task config.Chain) {
 				defer wg.Done()
-				log := log.With("chains", task)
 				log.Info(chain.ShowChainWithConfig(task))
 				for ctx.Err() == nil {
 					b := chain.NewBridge(log, dump)

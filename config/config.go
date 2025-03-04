@@ -3,13 +3,13 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/wzshiming/bridge/internal/scheme"
+	"github.com/wzshiming/bridge/logger"
 )
 
 func LoadConfigWithArgs(listens []string, dials []string) ([]Chain, error) {
@@ -55,7 +55,7 @@ func LoadConfig(configs ...string) ([]Chain, error) {
 	for _, confPath := range configs {
 		data, err := os.ReadFile(confPath)
 		if err != nil {
-			log.Println(err)
+			logger.Std.Error("LoadConfig", "err", err, "path", confPath)
 			continue
 		}
 		conf := Config{}
@@ -100,8 +100,7 @@ func (c Chain) Unique() string {
 }
 
 type Node struct {
-	Probe string   `json:"probe"`
-	LB    []string `json:"lb"`
+	LB []string `json:"lb"`
 }
 
 func (m Node) MarshalJSON() ([]byte, error) {

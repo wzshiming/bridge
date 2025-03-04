@@ -1,11 +1,15 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"os"
 )
 
-var Std = slog.Default()
+var Std = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	Level: slog.LevelInfo,
+}))
 
 func Wrap(logger *slog.Logger, name string) *wrap {
 	return &wrap{
@@ -18,5 +22,5 @@ type wrap struct {
 }
 
 func (w wrap) Println(v ...interface{}) {
-	w.Logger.Info(fmt.Sprintln(v...))
+	w.Logger.Log(context.Background(), slog.LevelWarn, "print", "message", fmt.Sprint(v...))
 }

@@ -98,14 +98,14 @@ func main() {
 		tasks, err = config.LoadConfig(configs...)
 		if err != nil {
 			printDefaults()
-			slog.Error("LoadConfig", "err", err)
+			logger.Std.Error("LoadConfig", "err", err)
 			return
 		}
 	} else {
 		tasks, err = config.LoadConfigWithArgs(listens, dials)
 		if err != nil {
 			printDefaults()
-			slog.Error("LoadConfigWithArgs", "err", err)
+			logger.Std.Error("LoadConfigWithArgs", "err", err)
 			return
 		}
 	}
@@ -136,7 +136,6 @@ func run(ctx context.Context, log *slog.Logger, tasks []config.Chain) {
 		}
 		go func(task config.Chain) {
 			defer wg.Done()
-			log := log.With("chains", task)
 			log.Info(chain.ShowChainWithConfig(task))
 			b := chain.NewBridge(log, dump)
 			err := b.BridgeWithConfig(ctx, task)

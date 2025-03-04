@@ -181,7 +181,6 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 					raw = idle.NewIdleConn(raw, idleTimeout)
 				}
 				backoff = time.Second / 10
-				b.logger.Info("Connect", "remote_address", raw.RemoteAddr().String())
 				go b.stepIgnoreErr(ctx, dialer, raw, dials)
 			}
 		}(i, l)
@@ -289,7 +288,6 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 					raw = idle.NewIdleConn(raw, idleTimeout)
 				}
 				backoff = time.Second / 10
-				b.logger.Info("Connect", "remote_address", raw.RemoteAddr().String())
 				go h.ServeConn(raw)
 			}
 		}(i, host)
