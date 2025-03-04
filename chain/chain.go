@@ -20,17 +20,13 @@ type BridgeChain struct {
 	DialerFunc   func(dialer bridge.Dialer) bridge.Dialer
 	proto        map[string]bridge.Bridger
 	defaultProto bridge.Bridger
-
-	backoffCount map[string]uint64
-	mutex        sync.Mutex
 }
 
 // NewBridgeChain create a new BridgeChain.
 func NewBridgeChain() *BridgeChain {
 	return &BridgeChain{
-		proto:        map[string]bridge.Bridger{},
-		DialerFunc:   NewEnvDialer,
-		backoffCount: map[string]uint64{},
+		proto:      map[string]bridge.Bridger{},
+		DialerFunc: NewEnvDialer,
 	}
 }
 
@@ -40,10 +36,8 @@ func (b *BridgeChain) BridgeChain(ctx context.Context, dialer bridge.Dialer, add
 		return dialer, nil
 	}
 	address := addresses[len(addresses)-1]
-	d, err := b.multiDial(dialer, strings.Split(address, "|"))
-	if err != nil {
-		return nil, err
-	}
+	d := b.multiDial(dialer, strings.Split(address, "|"))
+
 	addresses = addresses[:len(addresses)-1]
 	if len(addresses) == 0 {
 		return d, nil
@@ -70,10 +64,8 @@ func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.D
 		return dialer, nil
 	}
 	address := addresses[len(addresses)-1]
-	d, err := b.multiDial(dialer, address.LB)
-	if err != nil {
-		return nil, err
-	}
+	d := b.multiDial(dialer, address.LB)
+
 	addresses = addresses[:len(addresses)-1]
 	if len(addresses) == 0 {
 		return d, nil
@@ -81,13 +73,8 @@ func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.D
 	return b.bridgeChainWithConfig(ctx, d, addresses...)
 }
 
-func (b *BridgeChain) multiDial(dialer bridge.Dialer, addresses []string) (bridge.Dialer, error) {
-	useCount := &backoffManager{
-		addresses: addresses,
-		dialer:    dialer,
-		bc:        b,
-	}
-	return useCount, nil
+func (b *BridgeChain) multiDial(dialer bridge.Dialer, addresses []string) bridge.Dialer {
+	return newBackoffManager(dialer, b.singleDial, addresses)
 }
 
 func (b *BridgeChain) singleDial(ctx context.Context, dialer bridge.Dialer, address string) (bridge.Dialer, error) {
@@ -118,60 +105,96 @@ func (b *BridgeChain) RegisterDefault(bridger bridge.Bridger) {
 
 type backoffManager struct {
 	addresses []string
-	dialer    bridge.Dialer
+	dialers   []bridge.Dialer
 
-	bc *BridgeChain
+	baseDialer bridge.Dialer
+
+	bridgeFunc bridge.BridgeFunc
+
+	backoffCount map[int]uint64
+
+	mut sync.Mutex
 }
 
-func (u *backoffManager) useLeastAndCount(addresses []string) string {
-	if len(addresses) == 1 {
-		return addresses[0]
+func newBackoffManager(baseDialer bridge.Dialer, bridgeFunc bridge.BridgeFunc, addresses []string) *backoffManager {
+	return &backoffManager{
+		addresses:    addresses,
+		dialers:      make([]bridge.Dialer, len(addresses)),
+		baseDialer:   baseDialer,
+		bridgeFunc:   bridgeFunc,
+		backoffCount: map[int]uint64{},
 	}
+}
+
+func (u *backoffManager) useLeastIndex() int {
 	min := uint64(math.MaxUint64)
 
-	u.bc.mutex.Lock()
-	defer u.bc.mutex.Unlock()
-
-	var minAddress string
-	for _, address := range addresses {
-		if u.bc.backoffCount[address] < min {
-			min = u.bc.backoffCount[address]
-			minAddress = address
+	var index int
+	for i := range u.addresses {
+		if u.backoffCount[i] < min {
+			min = u.backoffCount[i]
+			index = i
 		}
 	}
-	u.bc.backoffCount[minAddress]++
-	return minAddress
+
+	u.backoffCount[index]++
+
+	if min > math.MaxInt32 {
+		for i := range u.backoffCount {
+			u.backoffCount[i] -= math.MaxInt32
+		}
+	}
+	return index
 }
 
-func (u *backoffManager) backoff(address string, count uint64) {
-	u.bc.mutex.Lock()
-	defer u.bc.mutex.Unlock()
-	u.bc.backoffCount[address] += count
+func (u *backoffManager) backoff(index int, count uint64) {
+	u.mut.Lock()
+	defer u.mut.Unlock()
+	u.backoffCount[index] += count
+}
+
+func (u *backoffManager) dialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	u.mut.Lock()
+	index := u.useLeastIndex()
+	addr := u.addresses[index]
+	dialer := u.dialers[index]
+	u.mut.Unlock()
+
+	if dialer == nil {
+		d, err := u.bridgeFunc(ctx, u.baseDialer, addr)
+		if err != nil {
+			logger.Std.Warn("failed dial", "err", err, "previous", addr)
+			u.backoff(index, 16)
+			return nil, err
+		}
+		dialer = d
+
+		u.mut.Lock()
+		u.dialers[index] = d
+		u.mut.Unlock()
+	}
+
+	conn, err := dialer.DialContext(ctx, network, address)
+	if err != nil {
+		logger.Std.Warn("failed dial target", "err", err, "previous", addr, "target", address)
+		u.backoff(index, 8)
+		return nil, err
+	}
+
+	logger.Std.Info("success dial target", "previous", addr, "target", address)
+	return conn, nil
 }
 
 func (u *backoffManager) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	var errs []error
-
-	tryTimes := len(u.addresses)
+	tryTimes := len(u.addresses)/2 + 1
 	for i := 0; i < tryTimes; i++ {
-		addr := u.useLeastAndCount(u.addresses)
-		dialer, err := u.bc.singleDial(ctx, u.dialer, addr)
+		conn, err := u.dialContext(ctx, network, address)
 		if err != nil {
 			errs = append(errs, err)
-			logger.Std.Warn("failed dial", "err", err, "previous", addr)
-			u.backoff(addr, 16)
 			continue
 		}
-		conn, err := dialer.DialContext(ctx, network, address)
-		if err != nil {
-			errs = append(errs, err)
-			logger.Std.Warn("failed dial target", "err", err, "previous", addr, "target", address)
-			u.backoff(addr, 8)
-			continue
-		}
-
-		logger.Std.Info("success dial target", "previous", addr, "target", address)
 		return conn, nil
 	}
-	return nil, fmt.Errorf("all addresses are failed: %w", errors.Join(errs...))
+	return nil, errors.Join(errs...)
 }
