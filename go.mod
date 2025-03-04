@@ -1,11 +1,11 @@
 module github.com/wzshiming/bridge
 
-go 1.22
+go 1.24
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/golang/snappy v0.0.4
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/wzshiming/anyproxy v0.7.18
 	github.com/wzshiming/cmux v0.4.2
 	github.com/wzshiming/commandproxy v0.2.0
@@ -26,9 +26,9 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/wzshiming/sshd v0.2.3 // indirect
 	github.com/wzshiming/trie v0.3.1 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 )
