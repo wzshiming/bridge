@@ -17,7 +17,7 @@ require (
 	github.com/wzshiming/shadowsocks v0.4.1
 	github.com/wzshiming/socks4 v0.3.2
 	github.com/wzshiming/socks5 v0.5.1
-	github.com/wzshiming/sshproxy v0.4.5
+	github.com/wzshiming/sshproxy v0.5.0
 )
 
 require (
