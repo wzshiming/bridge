@@ -83,7 +83,7 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 		}
 		l, ok := d.(bridge.ListenConfig)
 		if !ok || l == nil {
-			return fmt.Errorf("the last proxy could not listen")
+			return fmt.Errorf("the last proxy %T could not listen", d)
 		}
 		listenConfig = l
 	}
@@ -105,43 +105,29 @@ func (b *Bridge) Bridge(ctx context.Context, listens, dials []string) error {
 
 func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string, dials []string) error {
 	wg := sync.WaitGroup{}
-	listeners := make([]net.Listener, 0, len(listens))
-	for _, l := range listens {
-		network, listen, ok := scheme.SplitSchemeAddr(l)
-		if !ok {
-			err := fmt.Errorf("unsupported protocol format %q", l)
-			b.logger.Error("SplitSchemeAddr", "err", err)
-			return err
-		}
-		listener, err := netutils.Listen(ctx, listenConfig, network, listen)
-		if err != nil {
-			b.logger.Error("Listen", "err", err)
-			return err
-		}
-		listeners = append(listeners, listener)
-	}
 
-	if ctx != context.Background() {
-		go func() {
-			<-ctx.Done()
-			b.logger.Info("Close all listeners")
-			for _, listener := range listeners {
-				if listener == nil {
-					continue
-				}
-				listener.Close()
-			}
-		}()
-	}
-
-	wg.Add(len(listens))
+	listeners := make([]net.Listener, len(listens))
 	for i, l := range listens {
+		wg.Add(1)
 		go func(i int, l string) {
+			defer wg.Done()
+
+			network, listen, ok := scheme.SplitSchemeAddr(l)
+			if !ok {
+				b.logger.Error("unsupported protocol format", "address", l)
+				return
+			}
+			listener, err := netutils.Listen(ctx, listenConfig, network, listen)
+			if err != nil {
+				b.logger.Error("Listen", "err", err)
+				return
+			}
+			listeners[i] = listener
+
 			defer func() {
 				b.logger.Info("Close listener", "listen", l)
-				wg.Done()
+				listeners[i].Close()
 			}()
-			listener := listeners[i]
 
 			backoff := time.Second / 10
 		loop:
@@ -167,6 +153,7 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 						}
 						listener, err = netutils.Listen(ctx, listenConfig, network, listen)
 						if err == nil {
+							listeners[i].Close()
 							listeners[i] = listener
 							continue loop
 						}
@@ -202,38 +189,24 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 	}
 	hosts := svc.Hosts()
 
-	listeners := make([]net.Listener, 0, len(listens))
-	for _, host := range hosts {
-		listener, err := netutils.Listen(ctx, listenConfig, "tcp", host)
-		if err != nil {
-			b.logger.Error("Listen", "err", err)
-			return err
-		}
-		listeners = append(listeners, listener)
-	}
-
-	if ctx != context.Background() {
-		go func() {
-			<-ctx.Done()
-			b.logger.Info("Close all listeners")
-			for _, listener := range listeners {
-				if listener == nil {
-					continue
-				}
-				listener.Close()
-			}
-		}()
-	}
-
-	wg.Add(len(hosts))
+	listeners := make([]net.Listener, len(listens))
 	for i, host := range hosts {
+		wg.Add(1)
 		go func(i int, host string) {
+			defer wg.Done()
+
+			listener, err := netutils.Listen(ctx, listenConfig, "tcp", host)
+			if err != nil {
+				b.logger.Error("Listen", "err", err)
+				return
+			}
+
+			listeners[i] = listener
 			defer func() {
 				b.logger.Info("Close listener", "listen", host)
-				wg.Done()
+				listeners[i].Close()
 			}()
 
-			listener := listeners[i]
 			h := svc.Match(host)
 
 			backoff := time.Second / 10
@@ -254,6 +227,7 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 
 						listener, err = netutils.Listen(ctx, listenConfig, "tcp", host)
 						if err == nil {
+							listeners[i].Close()
 							listeners[i] = listener
 							continue loop
 						}
