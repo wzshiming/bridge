@@ -83,7 +83,7 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 		}
 		l, ok := d.(bridge.ListenConfig)
 		if !ok || l == nil {
-			return fmt.Errorf("the last proxy could not listen")
+			return fmt.Errorf("the last proxy %T could not listen", d)
 		}
 		listenConfig = l
 	}
