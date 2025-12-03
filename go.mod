@@ -1,6 +1,6 @@
 module github.com/wzshiming/bridge
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
@@ -25,9 +25,9 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/wzshiming/sshd v0.2.5 // indirect
 	github.com/wzshiming/trie v0.3.1 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 )
