@@ -65,16 +65,7 @@ func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.D
 	}
 	address := addresses[len(addresses)-1]
 
-	var d bridge.Dialer
-	if len(address.LB) > 1 {
-		d = b.multiDial(dialer, address.LB)
-	} else {
-		var err error
-		d, err = b.singleDial(ctx, dialer, address.LB[0])
-		if err != nil {
-			return nil, err
-		}
-	}
+	d := b.multiDial(dialer, address.LB)
 
 	addresses = addresses[:len(addresses)-1]
 	if len(addresses) == 0 {
