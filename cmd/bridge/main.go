@@ -39,6 +39,7 @@ import (
 
 var (
 	ctx, globalCancel = context.WithCancel(context.Background())
+	allow             []string
 	configs           []string
 	toConfig          bool
 	listens           []string
@@ -63,6 +64,7 @@ func init() {
 	flag.BoolVarP(&toConfig, "to-config", "t", false, "args to config")
 	flag.StringSliceVarP(&listens, "bind", "b", nil, "The first is the listening address, and then the proxy through which the listening address passes.\nIf it is not filled in, it is redirected to the pipeline.\nonly ssh and local support listening, so the last proxy must be ssh.")
 	flag.StringSliceVarP(&dials, "proxy", "p", nil, "The first is the dial-up address, followed by the proxy through which the dial-up address passes.")
+	flag.StringSliceVar(&allow, "allow", nil, "The allow of remote addresses.")
 	flag.DurationVar(&idleTimeout, "idle-timeout", 0, "The idle timeout for connections.")
 	flag.StringVar(&pprofAddress, "pprof", "", "The pprof address.")
 	flag.BoolVarP(&dump, "debug", "d", dump, "Output the communication data.")
@@ -107,6 +109,11 @@ func main() {
 			printDefaults()
 			logger.Std.Error("LoadConfigWithArgs", "err", err)
 			return
+		}
+		if len(allow) > 0 {
+			for i := range tasks {
+				tasks[i].Allow = allow
+			}
 		}
 	}
 

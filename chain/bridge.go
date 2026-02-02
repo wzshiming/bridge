@@ -24,6 +24,7 @@ import (
 	"github.com/wzshiming/bridge/logger"
 	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/commandproxy"
+	"github.com/wzshiming/hostmatcher"
 )
 
 type Bridge struct {
@@ -73,6 +74,11 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 		return step(ctx, dialer, raw, dial.LB)
 	}
 
+	var allow hostmatcher.Matcher
+	if len(config.Allow) != 0 {
+		allow = hostmatcher.NewMatcher(config.Allow)
+	}
+
 	listen := config.Bind[0]
 	listens := config.Bind[1:]
 
@@ -89,9 +95,9 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 	}
 
 	if len(dial.LB) != 0 && dial.LB[0] == "-" {
-		return b.bridgeProxy(ctx, listenConfig, dialer, config.IdleTimeout, listen.LB)
+		return b.bridgeProxy(ctx, listenConfig, dialer, config.IdleTimeout, listen.LB, allow)
 	} else {
-		return b.bridgeStream(ctx, listenConfig, dialer, config.IdleTimeout, listen.LB, dial.LB)
+		return b.bridgeStream(ctx, listenConfig, dialer, config.IdleTimeout, listen.LB, dial.LB, allow)
 	}
 }
 
@@ -103,7 +109,7 @@ func (b *Bridge) Bridge(ctx context.Context, listens, dials []string) error {
 	return b.BridgeWithConfig(ctx, conf[0])
 }
 
-func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string, dials []string) error {
+func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string, dials []string, allow hostmatcher.Matcher) error {
 	wg := sync.WaitGroup{}
 
 	listeners := make([]net.Listener, len(listens))
@@ -161,6 +167,21 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 					}
 					return
 				}
+
+				if allow != nil {
+					host, _, err := net.SplitHostPort(raw.RemoteAddr().String())
+					if err != nil {
+						b.logger.Error("SplitHostPort", "err", err)
+						raw.Close()
+						continue
+					}
+					if !allow.Match(host) {
+						b.logger.Warn("connection from remote address not in allow", "remote_addr", raw.RemoteAddr().String())
+						raw.Close()
+						continue
+					}
+				}
+
 				if b.dump {
 					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), strings.Join(dials, "|"))
 				}
@@ -176,7 +197,7 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 	return nil
 }
 
-func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string) error {
+func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string, allow hostmatcher.Matcher) error {
 	wg := sync.WaitGroup{}
 	svc, err := anyproxy.NewAnyProxy(ctx, listens, &anyproxy.Config{
 		Dialer:       dialer,
@@ -235,6 +256,21 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 					}
 					return
 				}
+
+				if allow != nil {
+					host, _, err := net.SplitHostPort(raw.RemoteAddr().String())
+					if err != nil {
+						b.logger.Error("SplitHostPort", "err", err)
+						raw.Close()
+						continue
+					}
+					if !allow.Match(host) {
+						b.logger.Warn("connection from remote address not in allow", "remote_addr", raw.RemoteAddr().String())
+						raw.Close()
+						continue
+					}
+				}
+
 				h := h
 				if b.dump {
 					// In dubug mode, need to know the address of the client.
@@ -254,6 +290,7 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 					})
 					if err != nil {
 						b.logger.Error("NewAnyProxy", "err", err)
+						raw.Close()
 						return
 					}
 					h = svc.Match(host)

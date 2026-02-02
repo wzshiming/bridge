@@ -81,6 +81,7 @@ type Config struct {
 type Chain struct {
 	Bind        []Node        `json:"bind"`
 	Proxy       []Node        `json:"proxy"`
+	Allow       []string      `json:"allow"`
 	IdleTimeout time.Duration `json:"idle_timeout"`
 }
 
