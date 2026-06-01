@@ -16,7 +16,7 @@ require (
 	github.com/wzshiming/shadowsocks v0.4.2
 	github.com/wzshiming/socks4 v0.4.0
 	github.com/wzshiming/socks5 v0.7.0
-	github.com/wzshiming/sshproxy v0.5.4
+	github.com/wzshiming/sshproxy v0.6.0
 )
 
 require (
@@ -24,9 +24,9 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/wzshiming/sshd v0.2.5 // indirect
 	github.com/wzshiming/trie v0.3.1 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 )
