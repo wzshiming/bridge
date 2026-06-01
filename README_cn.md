@@ -19,7 +19,6 @@ Bridge 是一个支持 http(s)-connect socks4/4a/5/5h ssh proxycommand 的tcp代
 - [Shadow Socks](https://github.com/wzshiming/shadowsocks)
 - [SSH Proxy](https://github.com/wzshiming/sshproxy)
 - [Any Proxy](https://github.com/wzshiming/anyproxy)
-- [Emux](https://github.com/wzshiming/emux)
 
 ## 示例
 

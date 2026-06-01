@@ -15,7 +15,6 @@ import (
 
 	_ "github.com/wzshiming/bridge/protocols/command"
 	_ "github.com/wzshiming/bridge/protocols/connect"
-	_ "github.com/wzshiming/bridge/protocols/emux"
 	_ "github.com/wzshiming/bridge/protocols/netcat"
 	_ "github.com/wzshiming/bridge/protocols/permuteproxy"
 	_ "github.com/wzshiming/bridge/protocols/shadowsocks"

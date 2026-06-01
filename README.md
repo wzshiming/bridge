@@ -19,7 +19,6 @@ Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh proxycomma
 - [Shadow Socks](https://github.com/wzshiming/shadowsocks)
 - [SSH Proxy](https://github.com/wzshiming/sshproxy)
 - [Any Proxy](https://github.com/wzshiming/anyproxy)
-- [Emux](https://github.com/wzshiming/emux)
 
 ## Example
 
