@@ -199,3 +199,57 @@ func (u *backoffManager) DialContext(ctx context.Context, network, address strin
 	}
 	return nil, errors.Join(errs...)
 }
+
+func (u *backoffManager) listen(ctx context.Context, network, address string) (net.Listener, error) {
+	u.mut.Lock()
+	index := u.useLeastIndex()
+	addr := u.addresses[index]
+	dialer := u.dialers[index]
+	u.mut.Unlock()
+
+	if dialer == nil {
+		d, err := u.bridgeFunc(ctx, u.baseDialer, addr)
+		if err != nil {
+			logger.Std.Warn("failed dial", "err", err, "previous", addr)
+			u.backoff(index, 16)
+			return nil, err
+		}
+		dialer = d
+
+		u.mut.Lock()
+		u.dialers[index] = d
+		u.mut.Unlock()
+	}
+
+	l, ok := dialer.(bridge.ListenConfig)
+	if !ok || l == nil {
+		err := fmt.Errorf("the previous proxy %T could not listen", dialer)
+		logger.Std.Warn("failed listen", "err", err, "previous", addr)
+		u.backoff(index, 8)
+		return nil, err
+	}
+
+	listener, err := l.Listen(ctx, network, address)
+	if err != nil {
+		logger.Std.Warn("failed listen target", "err", err, "previous", addr, "target", address)
+		u.backoff(index, 8)
+		return nil, err
+	}
+
+	logger.Std.Info("success listen target", "previous", addr, "target", address)
+	return listener, nil
+}
+
+func (u *backoffManager) Listen(ctx context.Context, network, address string) (net.Listener, error) {
+	var errs []error
+	tryTimes := len(u.addresses)/2 + 1
+	for i := 0; i < tryTimes; i++ {
+		listener, err := u.listen(ctx, network, address)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		return listener, nil
+	}
+	return nil, errors.Join(errs...)
+}
