@@ -3,7 +3,6 @@
 Bridge is a TCP proxy tool Support http(s)-connect socks4/4a/5/5h ssh proxycommand
 
 [![Build](https://github.com/wzshiming/bridge/actions/workflows/go-cross-build.yml/badge.svg)](https://github.com/wzshiming/bridge/actions/workflows/go-cross-build.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/bridge)](https://goreportcard.com/report/github.com/wzshiming/bridge)
 [![GoDoc](https://godoc.org/github.com/wzshiming/bridge?status.svg)](https://godoc.org/github.com/wzshiming/bridge)
 [![GitHub license](https://img.shields.io/github/license/wzshiming/bridge.svg)](https://github.com/wzshiming/bridge/blob/master/LICENSE)
 
