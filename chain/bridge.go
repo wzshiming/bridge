@@ -337,13 +337,16 @@ func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, dia
 	if err != nil {
 		return err
 	}
+	if _, ok := raw.(net.Conn); ok {
+		return Tunnel(ctx, conn, raw)
+	}
 	buf1 := pool.Bytes.Get()
 	buf2 := pool.Bytes.Get()
 	defer func() {
 		pool.Bytes.Put(buf1)
 		pool.Bytes.Put(buf2)
 	}()
-	return commandproxy.Tunnel(context.Background(), conn, raw, buf1, buf2)
+	return commandproxy.Tunnel(ctx, conn, raw, buf1, buf2)
 }
 
 func ShowChainWithConfig(config config.Chain) string {
