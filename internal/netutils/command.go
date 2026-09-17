@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"sync"
-	"sync/atomic"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/cmux"
@@ -89,35 +88,79 @@ type listener struct {
 	proxy         []string
 	localAddr     net.Addr
 	remoteAddr    net.Addr
-	isClose       uint32
 	mux           sync.Mutex
+	state         sync.Mutex
+	closed        bool
+	cancel        context.CancelFunc
 }
 
 func (l *listener) Accept() (net.Conn, error) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
-	if atomic.LoadUint32(&l.isClose) == 1 {
+
+	l.state.Lock()
+	if l.closed {
+		l.state.Unlock()
 		return nil, ErrClosedConn
 	}
+	// Canceled by Close only while pending, so accepted commands outlive the listener.
+	ctx, cancel := context.WithCancel(l.ctx)
+	l.cancel = cancel
+	l.state.Unlock()
 
-	n, err := NewCommandDialContext(l.ctx, l.commandDialer, l.localAddr, l.remoteAddr, l.proxy)
+	n, err := l.probe(ctx)
+
+	l.state.Lock()
+	l.cancel = nil
+	l.state.Unlock()
+
+	if ctx.Err() != nil {
+		if n != nil {
+			n.Close()
+		}
+		cancel()
+		return nil, ErrClosedConn
+	}
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	return ConnWithCloser(n, func() error {
+		err := n.Close()
+		cancel()
+		return err
+	}), nil
+}
+
+// probe dials one command and waits for its first byte, closing the conn if ctx ends first.
+func (l *listener) probe(ctx context.Context) (net.Conn, error) {
+	n, err := NewCommandDialContext(ctx, l.commandDialer, l.localAddr, l.remoteAddr, l.proxy)
 	if err != nil {
 		return nil, err
 	}
 
 	// Because there is no way to tell if there is a connection coming in from the command line,
 	// the next listen can only be performed if the data is read or closed
+	stop := context.AfterFunc(ctx, func() { n.Close() })
 	var tmp [1]byte
 	_, err = n.Read(tmp[:])
+	if !stop() {
+		return nil, ctx.Err()
+	}
 	if err != nil {
+		n.Close()
 		return nil, err
 	}
-	n = cmux.UnreadConn(n, tmp[:])
-	return n, nil
+	return cmux.UnreadConn(n, tmp[:]), nil
 }
 
 func (l *listener) Close() error {
-	atomic.StoreUint32(&l.isClose, 1)
+	l.state.Lock()
+	defer l.state.Unlock()
+	l.closed = true
+	if l.cancel != nil {
+		l.cancel()
+	}
 	return nil
 }
 
