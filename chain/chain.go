@@ -106,6 +106,7 @@ func (b *BridgeChain) RegisterDefault(bridger bridge.Bridger) {
 
 type backoffManager struct {
 	addresses []string
+	logAddrs  []string
 	dialers   []bridge.Dialer
 
 	baseDialer bridge.Dialer
@@ -118,13 +119,30 @@ type backoffManager struct {
 }
 
 func newBackoffManager(baseDialer bridge.Dialer, bridgeFunc bridge.BridgeFunc, addresses []string) *backoffManager {
+	logAddrs := make([]string, len(addresses))
+	for i, address := range addresses {
+		logAddrs[i] = logAddr(address)
+	}
 	return &backoffManager{
 		addresses:    addresses,
+		logAddrs:     logAddrs,
 		dialers:      make([]bridge.Dialer, len(addresses)),
 		baseDialer:   baseDialer,
 		bridgeFunc:   bridgeFunc,
 		backoffCount: map[int]uint64{},
 	}
+}
+
+func logAddr(address string) string {
+	sch, addr, ok := scheme.SplitSchemeAddr(address)
+	if !ok {
+		return ""
+	}
+	p, ok := scheme.JoinSchemeAddr(sch, addr)
+	if !ok || strings.Contains(p, "@") {
+		return ""
+	}
+	return p
 }
 
 func (u *backoffManager) useLeastIndex() int {
@@ -158,13 +176,14 @@ func (u *backoffManager) dialContext(ctx context.Context, network, address strin
 	u.mut.Lock()
 	index := u.useLeastIndex()
 	addr := u.addresses[index]
+	previous := u.logAddrs[index]
 	dialer := u.dialers[index]
 	u.mut.Unlock()
 
 	if dialer == nil {
 		d, err := u.bridgeFunc(ctx, u.baseDialer, addr)
 		if err != nil {
-			logger.Std.Warn("failed dial", "err", err, "previous", addr)
+			logger.Std.Warn("failed dial", "err", err, "previous", previous)
 			u.backoff(index, 16)
 			return nil, err
 		}
@@ -177,12 +196,12 @@ func (u *backoffManager) dialContext(ctx context.Context, network, address strin
 
 	conn, err := dialer.DialContext(ctx, network, address)
 	if err != nil {
-		logger.Std.Warn("failed dial target", "err", err, "previous", addr, "target", address)
+		logger.Std.Warn("failed dial target", "err", err, "previous", previous, "target", address)
 		u.backoff(index, 8)
 		return nil, err
 	}
 
-	logger.Std.Info("success dial target", "previous", addr, "target", address)
+	logger.Std.Info("success dial target", "previous", previous, "target", address)
 	return conn, nil
 }
 
@@ -204,13 +223,14 @@ func (u *backoffManager) listen(ctx context.Context, network, address string) (n
 	u.mut.Lock()
 	index := u.useLeastIndex()
 	addr := u.addresses[index]
+	previous := u.logAddrs[index]
 	dialer := u.dialers[index]
 	u.mut.Unlock()
 
 	if dialer == nil {
 		d, err := u.bridgeFunc(ctx, u.baseDialer, addr)
 		if err != nil {
-			logger.Std.Warn("failed dial", "err", err, "previous", addr)
+			logger.Std.Warn("failed dial", "err", err, "previous", previous)
 			u.backoff(index, 16)
 			return nil, err
 		}
@@ -224,19 +244,19 @@ func (u *backoffManager) listen(ctx context.Context, network, address string) (n
 	l, ok := dialer.(bridge.ListenConfig)
 	if !ok || l == nil {
 		err := fmt.Errorf("the previous proxy %T could not listen", dialer)
-		logger.Std.Warn("failed listen", "err", err, "previous", addr)
+		logger.Std.Warn("failed listen", "err", err, "previous", previous)
 		u.backoff(index, 8)
 		return nil, err
 	}
 
 	listener, err := l.Listen(ctx, network, address)
 	if err != nil {
-		logger.Std.Warn("failed listen target", "err", err, "previous", addr, "target", address)
+		logger.Std.Warn("failed listen target", "err", err, "previous", previous, "target", address)
 		u.backoff(index, 8)
 		return nil, err
 	}
 
-	logger.Std.Info("success listen target", "previous", addr, "target", address)
+	logger.Std.Info("success listen target", "previous", previous, "target", address)
 	return listener, nil
 }
 
