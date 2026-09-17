@@ -17,7 +17,9 @@ import (
 
 // BridgeChain is a bridger that supports multiple crossing of bridger.
 type BridgeChain struct {
-	DialerFunc   func(dialer bridge.Dialer) bridge.Dialer
+	DialerFunc func(dialer bridge.Dialer) bridge.Dialer
+	// HopFunc wraps each hop; index 0 is nearest the target.
+	HopFunc      func(index int, address string, dialer bridge.Dialer) bridge.Dialer
 	proto        map[string]bridge.Bridger
 	defaultProto bridge.Bridger
 }
@@ -36,7 +38,7 @@ func (b *BridgeChain) BridgeChain(ctx context.Context, dialer bridge.Dialer, add
 		return dialer, nil
 	}
 	address := addresses[len(addresses)-1]
-	d := b.multiDial(dialer, strings.Split(address, "|"))
+	d := b.multiDial(dialer, strings.Split(address, "|"), len(addresses)-1)
 
 	addresses = addresses[:len(addresses)-1]
 	if len(addresses) == 0 {
@@ -65,7 +67,7 @@ func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.D
 	}
 	address := addresses[len(addresses)-1]
 
-	d := b.multiDial(dialer, address.LB)
+	d := b.multiDial(dialer, address.LB, len(addresses)-1)
 
 	addresses = addresses[:len(addresses)-1]
 	if len(addresses) == 0 {
@@ -74,8 +76,17 @@ func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.D
 	return b.bridgeChainWithConfig(ctx, d, addresses...)
 }
 
-func (b *BridgeChain) multiDial(dialer bridge.Dialer, addresses []string) bridge.Dialer {
-	return newBackoffManager(dialer, b.singleDial, addresses)
+func (b *BridgeChain) multiDial(dialer bridge.Dialer, addresses []string, index int) bridge.Dialer {
+	return newBackoffManager(dialer, func(ctx context.Context, base bridge.Dialer, address string) (bridge.Dialer, error) {
+		d, err := b.singleDial(ctx, base, address)
+		if err != nil {
+			return nil, err
+		}
+		if b.HopFunc != nil {
+			d = b.HopFunc(index, address, d)
+		}
+		return d, nil
+	}, addresses)
 }
 
 func (b *BridgeChain) singleDial(ctx context.Context, dialer bridge.Dialer, address string) (bridge.Dialer, error) {
