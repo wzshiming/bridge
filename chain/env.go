@@ -44,13 +44,14 @@ func NewEnvDialer(dialer bridge.Dialer) bridge.Dialer {
 	if OnlyProxy == nil && NoProxy == nil {
 		return dialer
 	}
+	l, ok := dialer.(bridge.ListenConfig)
 	if OnlyProxy != nil {
 		dialer = NewShuntDialer(local.LOCAL, dialer, OnlyProxy)
 	}
 	if NoProxy != nil {
 		dialer = NewShuntDialer(dialer, local.LOCAL, NoProxy)
 	}
-	if l, ok := dialer.(bridge.ListenConfig); ok {
+	if ok {
 		return struct {
 			bridge.Dialer
 			bridge.ListenConfig
