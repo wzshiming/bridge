@@ -5,12 +5,13 @@ import (
 	"crypto/tls"
 	"net"
 	"net/url"
+	"strconv"
 
 	"github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/protocols/local"
 )
 
-// TLS tls:[opaque]
+// TLS tls:[name][?insecure=true] or tls://[name][?insecure=true]
 func TLS(ctx context.Context, dialer bridge.Dialer, addr string) (bridge.Dialer, error) {
 	if dialer == nil {
 		dialer = local.LOCAL
@@ -19,22 +20,35 @@ func TLS(ctx context.Context, dialer bridge.Dialer, addr string) (bridge.Dialer,
 	if err != nil {
 		return nil, err
 	}
-	return bridge.DialFunc(func(ctx context.Context, network, addr string) (c net.Conn, err error) {
-		c, err = dialer.DialContext(ctx, network, addr)
+	query, err := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		return nil, err
+	}
+	insecure := false
+	if values, ok := query["insecure"]; ok {
+		insecure, err = strconv.ParseBool(values[0])
+		if err != nil {
+			return nil, err
+		}
+	}
+	name := uri.Opaque
+	if name == "" {
+		name = uri.Hostname()
+	}
+	return bridge.DialFunc(func(ctx context.Context, network, address string) (net.Conn, error) {
+		c, err := dialer.DialContext(ctx, network, address)
 		if err != nil {
 			return nil, err
 		}
 
-		conf := &tls.Config{}
-		if uri.Opaque == "" || net.ParseIP(uri.Opaque) != nil {
-			conf.InsecureSkipVerify = true
-		} else {
-			conf.ServerName = uri.Opaque
+		conf := &tls.Config{ServerName: name, InsecureSkipVerify: insecure}
+		if conf.ServerName == "" {
+			conf.ServerName, _, _ = net.SplitHostPort(address)
 		}
 
 		tc := tls.Client(c, conf)
-		err = tc.Handshake()
-		if err != nil {
+		if err := tc.HandshakeContext(ctx); err != nil {
+			c.Close()
 			return nil, err
 		}
 		return tc, nil
