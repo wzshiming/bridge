@@ -14,7 +14,7 @@ var (
 
 type idleConnManager struct {
 	list map[*idleConn]struct{}
-	mut  sync.RWMutex
+	mut  sync.Mutex
 }
 
 func newIdleConnManager() *idleConnManager {
@@ -50,15 +50,16 @@ func (m *idleConnManager) remove(conn *idleConn) bool {
 
 func (m *idleConnManager) Clear() {
 	now := time.Now()
-	conns := make([]*idleConn, 0, len(m.list))
+	var conns []*idleConn
 
-	m.mut.RLock()
+	m.mut.Lock()
 	for conn := range m.list {
-		if conn.last.Add(conn.timeout).Before(now) {
+		if conn.last.Load().(time.Time).Add(conn.timeout).Before(now) {
+			delete(m.list, conn)
 			conns = append(conns, conn)
 		}
 	}
-	m.mut.RUnlock()
+	m.mut.Unlock()
 
 	if len(conns) == 0 {
 		return
@@ -66,7 +67,7 @@ func (m *idleConnManager) Clear() {
 
 	logger.Std.Info("Clear idle connections", "count", len(conns))
 	for _, conn := range conns {
-		conn.Close()
+		conn.Conn.Close()
 	}
 }
 
