@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"sync"
-	"sync/atomic"
 )
 
 var virtualNetwork = newVirtualNetworkManager()
@@ -32,28 +31,28 @@ func (a Addr) String() string {
 }
 
 func (v *virtualNetworkManager) Listen(ctx context.Context, network, address string) (net.Listener, error) {
-	addr := Addr(address)
-	listener := newVirtualNetwork(v, addr)
+	listener := newVirtualNetwork(v, Addr(address))
 
 	v.mut.Lock()
-	defer v.mut.Unlock()
-	l, ok := v.address[address]
-	if ok {
-		old := l
-		defer old.Close()
-	}
+	old := v.address[address]
 	v.address[address] = listener
+	v.mut.Unlock()
+
+	// Close takes the manager lock again, so it must run after Unlock.
+	if old != nil {
+		old.Close()
+	}
 	return listener, nil
 }
 
 func (v *virtualNetworkManager) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	v.mut.RLock()
-	defer v.mut.RUnlock()
 	l, ok := v.address[address]
-	if ok {
-		return l.Conn(Addr(address))
+	v.mut.RUnlock()
+	if !ok {
+		return nil, fmt.Errorf("couldn't connect to virtual server %s://%s", network, address)
 	}
-	return nil, fmt.Errorf("couldn't connect to virtual server %s://%s", network, address)
+	return l.Conn(ctx, Addr(address))
 }
 
 func (v *virtualNetworkManager) close(listener *VirtualNetwork) error {
@@ -73,7 +72,8 @@ type VirtualNetwork struct {
 	parent     *virtualNetworkManager
 	serverAddr net.Addr
 	ch         chan net.Conn
-	isClose    uint32
+	done       chan struct{}
+	closeOnce  sync.Once
 }
 
 func newVirtualNetwork(parent *virtualNetworkManager, serverAddr net.Addr) *VirtualNetwork {
@@ -81,24 +81,26 @@ func newVirtualNetwork(parent *virtualNetworkManager, serverAddr net.Addr) *Virt
 		parent:     parent,
 		serverAddr: serverAddr,
 		ch:         make(chan net.Conn),
+		done:       make(chan struct{}),
 	}
 }
 
 func (l *VirtualNetwork) Accept() (net.Conn, error) {
-	conn, ok := <-l.ch
-	if !ok {
+	select {
+	case <-l.done:
 		return nil, ErrClosedConn
+	case conn := <-l.ch:
+		return conn, nil
 	}
-	return conn, nil
 }
 
 func (l *VirtualNetwork) Close() error {
-	if atomic.CompareAndSwapUint32(&l.isClose, 0, 1) {
-		close(l.ch)
+	l.closeOnce.Do(func() {
+		close(l.done)
 		if l.parent != nil {
 			l.parent.close(l)
 		}
-	}
+	})
 	return nil
 }
 
@@ -106,9 +108,14 @@ func (l *VirtualNetwork) Addr() net.Addr {
 	return l.serverAddr
 }
 
-func (l *VirtualNetwork) Conn(clientAddr net.Addr) (net.Conn, error) {
-	if atomic.LoadUint32(&l.isClose) == 1 {
+func (l *VirtualNetwork) Conn(ctx context.Context, clientAddr net.Addr) (net.Conn, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	select {
+	case <-l.done:
 		return nil, ErrClosedConn
+	default:
 	}
 	c, s := net.Pipe()
 	s = &pipeConn{
@@ -121,8 +128,18 @@ func (l *VirtualNetwork) Conn(clientAddr net.Addr) (net.Conn, error) {
 		remoteAddr: l.serverAddr,
 		localAddr:  clientAddr,
 	}
-	l.ch <- s
-	return c, nil
+	select {
+	case l.ch <- s:
+		return c, nil
+	case <-l.done:
+		c.Close()
+		s.Close()
+		return nil, ErrClosedConn
+	case <-ctx.Done():
+		c.Close()
+		s.Close()
+		return nil, ctx.Err()
+	}
 }
 
 type pipeConn struct {
