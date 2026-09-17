@@ -2,12 +2,13 @@ package idle
 
 import (
 	"net"
+	"sync/atomic"
 	"time"
 )
 
 type idleConn struct {
 	timeout time.Duration
-	last    time.Time
+	last    atomic.Value // time.Time of the last I/O, monotonic reading kept
 	net.Conn
 }
 
@@ -15,9 +16,9 @@ type idleConn struct {
 func NewIdleConn(conn net.Conn, timeout time.Duration) net.Conn {
 	c := &idleConn{
 		timeout: timeout,
-		last:    time.Now(),
 		Conn:    conn,
 	}
+	c.last.Store(time.Now())
 	_ = connManager.add(c)
 	return c
 }
@@ -27,25 +28,23 @@ func (c *idleConn) Read(b []byte) (int, error) {
 	if err != nil {
 		connManager.remove(c)
 	} else {
-		c.last = time.Now()
+		c.last.Store(time.Now())
 	}
 	return n, err
 }
 
 func (c *idleConn) Write(b []byte) (int, error) {
-	c.last = time.Now()
+	c.last.Store(time.Now())
 	n, err := c.Conn.Write(b)
 	if err != nil {
 		connManager.remove(c)
 	} else {
-		c.last = time.Now()
+		c.last.Store(time.Now())
 	}
 	return n, err
 }
 
 func (c *idleConn) Close() error {
-	if !connManager.remove(c) {
-		return nil
-	}
+	connManager.remove(c)
 	return c.Conn.Close()
 }
