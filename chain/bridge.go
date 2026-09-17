@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -110,95 +111,44 @@ func (b *Bridge) Bridge(ctx context.Context, listens, dials []string) error {
 }
 
 func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string, dials []string, allow hostmatcher.Matcher) error {
-	wg := sync.WaitGroup{}
-
-	listeners := make([]net.Listener, len(listens))
-	for i, l := range listens {
-		wg.Add(1)
-		go func(i int, l string) {
-			defer wg.Done()
-
-			network, listen, ok := scheme.SplitSchemeAddr(l)
-			if !ok {
-				b.logger.Error("unsupported protocol format", "address", l)
-				return
-			}
-			listener, err := netutils.Listen(ctx, listenConfig, network, listen)
+	return b.serveListeners(ctx, listens, func(ctx context.Context, address string) (net.Listener, error) {
+		network, listen, ok := scheme.SplitSchemeAddr(address)
+		if !ok {
+			return nil, fmt.Errorf("unsupported protocol format %q", address)
+		}
+		return netutils.Listen(ctx, listenConfig, network, listen)
+	}, func(ctx context.Context, address string, listener net.Listener) error {
+		for ctx.Err() == nil {
+			raw, err := listener.Accept()
 			if err != nil {
-				b.logger.Error("Listen", "err", err)
-				return
+				return err
 			}
-			listeners[i] = listener
-
-			defer func() {
-				b.logger.Info("Close listener", "listen", l)
-				listeners[i].Close()
-			}()
-
-			backoff := time.Second / 10
-		loop:
-			for ctx.Err() == nil {
-				raw, err := listener.Accept()
+			if allow != nil {
+				host, _, err := net.SplitHostPort(raw.RemoteAddr().String())
 				if err != nil {
-					if ignoreClosedErr(err) != nil {
-						b.logger.Error("Accept", "err", err)
-					}
-
-					for ctx.Err() == nil {
-						backoff <<= 1
-						if backoff > time.Second*30 {
-							backoff = time.Second * 30
-						}
-						b.logger.Info("Relisten", "backoff", backoff)
-						time.Sleep(backoff)
-
-						network, listen, ok := scheme.SplitSchemeAddr(l)
-						if !ok {
-							b.logger.Error("unsupported protocol", "protocol", l)
-							return
-						}
-						listener, err = netutils.Listen(ctx, listenConfig, network, listen)
-						if err == nil {
-							listeners[i].Close()
-							listeners[i] = listener
-							continue loop
-						}
-						b.logger.Error("Relisten", "err", err)
-					}
-					return
+					b.logger.Error("SplitHostPort", "err", err)
+					raw.Close()
+					continue
 				}
-
-				if allow != nil {
-					host, _, err := net.SplitHostPort(raw.RemoteAddr().String())
-					if err != nil {
-						b.logger.Error("SplitHostPort", "err", err)
-						raw.Close()
-						continue
-					}
-					if !allow.Match(host) {
-						b.logger.Warn("connection from remote address not in allow", "remote_addr", raw.RemoteAddr().String())
-						raw.Close()
-						continue
-					}
+				if !allow.Match(host) {
+					b.logger.Warn("connection from remote address not in allow", "remote_addr", raw.RemoteAddr().String())
+					raw.Close()
+					continue
 				}
-
-				if b.dump {
-					raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), strings.Join(dials, "|"))
-				}
-				if idleTimeout != 0 {
-					raw = idle.NewIdleConn(raw, idleTimeout)
-				}
-				backoff = time.Second / 10
-				go b.stepIgnoreErr(ctx, dialer, raw, dials)
 			}
-		}(i, l)
-	}
-	wg.Wait()
-	return nil
+			if b.dump {
+				raw = dump.NewDumpConn(raw, true, raw.RemoteAddr().String(), strings.Join(dials, "|"))
+			}
+			if idleTimeout != 0 {
+				raw = idle.NewIdleConn(raw, idleTimeout)
+			}
+			go b.stepIgnoreErr(ctx, dialer, raw, dials)
+		}
+		return ctx.Err()
+	})
 }
 
 func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConfig, dialer bridge.Dialer, idleTimeout time.Duration, listens []string, allow hostmatcher.Matcher) error {
-	wg := sync.WaitGroup{}
 	svc, err := anyproxy.NewAnyProxy(ctx, listens, &anyproxy.Config{
 		Dialer:       dialer,
 		ListenConfig: listenConfig,
@@ -208,100 +158,110 @@ func (b *Bridge) bridgeProxy(ctx context.Context, listenConfig bridge.ListenConf
 	if err != nil {
 		return err
 	}
-	hosts := svc.Hosts()
-
-	listeners := make([]net.Listener, len(listens))
-	for i, host := range hosts {
-		wg.Add(1)
-		go func(i int, host string) {
-			defer wg.Done()
-
-			listener, err := netutils.Listen(ctx, listenConfig, "tcp", host)
+	return b.serveListeners(ctx, svc.Hosts(), func(ctx context.Context, host string) (net.Listener, error) {
+		return netutils.Listen(ctx, listenConfig, "tcp", host)
+	}, func(ctx context.Context, host string, listener net.Listener) error {
+		h := svc.Match(host)
+		for ctx.Err() == nil {
+			raw, err := listener.Accept()
 			if err != nil {
-				b.logger.Error("Listen", "err", err)
-				return
+				return err
 			}
-
-			listeners[i] = listener
-			defer func() {
-				b.logger.Info("Close listener", "listen", host)
-				listeners[i].Close()
-			}()
-
-			h := svc.Match(host)
-
-			backoff := time.Second / 10
-		loop:
-			for ctx.Err() == nil {
-				raw, err := listener.Accept()
+			if allow != nil {
+				host, _, err := net.SplitHostPort(raw.RemoteAddr().String())
 				if err != nil {
-					if ignoreClosedErr(err) != nil {
-						b.logger.Error("Accept", "err", err)
-					}
-					for ctx.Err() == nil {
-						backoff <<= 1
-						if backoff > time.Second*30 {
-							backoff = time.Second * 30
-						}
-						b.logger.Info("Relisten", "backoff", backoff)
-						time.Sleep(backoff)
-
-						listener, err = netutils.Listen(ctx, listenConfig, "tcp", host)
-						if err == nil {
-							listeners[i].Close()
-							listeners[i] = listener
-							continue loop
-						}
-						b.logger.Error("Relisten", "err", err)
-					}
-					return
+					b.logger.Error("SplitHostPort", "err", err)
+					raw.Close()
+					continue
 				}
-
-				if allow != nil {
-					host, _, err := net.SplitHostPort(raw.RemoteAddr().String())
-					if err != nil {
-						b.logger.Error("SplitHostPort", "err", err)
-						raw.Close()
-						continue
-					}
-					if !allow.Match(host) {
-						b.logger.Warn("connection from remote address not in allow", "remote_addr", raw.RemoteAddr().String())
-						raw.Close()
-						continue
-					}
+				if !allow.Match(host) {
+					b.logger.Warn("connection from remote address not in allow", "remote_addr", raw.RemoteAddr().String())
+					raw.Close()
+					continue
 				}
-
-				h := h
-				if b.dump {
-					// In dubug mode, need to know the address of the client.
-					// Because it is debug, performance is not considered here.
-					dial := bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
-						c, err = netutils.Dial(ctx, dialer, network, address)
-						if err != nil {
-							return nil, err
-						}
-						return dump.NewDumpConn(c, false, raw.RemoteAddr().String(), address), nil
-					})
-					svc, err := anyproxy.NewAnyProxy(ctx, listens, &anyproxy.Config{
-						Dialer:       dial,
-						ListenConfig: listenConfig,
-						Logger:       logger.Wrap(b.logger, "anyproxy"),
-						BytesPool:    pool.Bytes,
-					})
-					if err != nil {
-						b.logger.Error("NewAnyProxy", "err", err)
-						raw.Close()
-						return
-					}
-					h = svc.Match(host)
-				}
-				if idleTimeout != 0 {
-					raw = idle.NewIdleConn(raw, idleTimeout)
-				}
-				backoff = time.Second / 10
-				go h.ServeConn(raw)
 			}
-		}(i, host)
+			h := h
+			if b.dump {
+				dial := bridge.DialFunc(func(ctx context.Context, network, address string) (c net.Conn, err error) {
+					c, err = netutils.Dial(ctx, dialer, network, address)
+					if err != nil {
+						return nil, err
+					}
+					return dump.NewDumpConn(c, false, raw.RemoteAddr().String(), address), nil
+				})
+				svc, err := anyproxy.NewAnyProxy(ctx, listens, &anyproxy.Config{
+					Dialer:       dial,
+					ListenConfig: listenConfig,
+					Logger:       logger.Wrap(b.logger, "anyproxy"),
+					BytesPool:    pool.Bytes,
+				})
+				if err != nil {
+					raw.Close()
+					return err
+				}
+				h = svc.Match(host)
+			}
+			if idleTimeout != 0 {
+				raw = idle.NewIdleConn(raw, idleTimeout)
+			}
+			go func() {
+				stop := context.AfterFunc(ctx, func() { raw.Close() })
+				defer stop()
+				defer raw.Close()
+				h.ServeConn(raw)
+			}()
+		}
+		return ctx.Err()
+	})
+}
+
+func (b *Bridge) serveListeners(ctx context.Context, addresses []string, listen func(context.Context, string) (net.Listener, error), serve func(context.Context, string, net.Listener) error) error {
+	listeners := make([]net.Listener, 0, len(addresses))
+	for _, address := range addresses {
+		if ctx.Err() != nil {
+			return nil
+		}
+		listener, err := listen(ctx, address)
+		if listener != nil {
+			stop := context.AfterFunc(ctx, func() { listener.Close() })
+			defer stop()
+			defer listener.Close()
+		}
+		if err != nil {
+			if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
+				return nil
+			}
+			return err
+		}
+		if listener == nil {
+			return errors.New("listen returned no listener")
+		}
+		listeners = append(listeners, listener)
+	}
+	wg := sync.WaitGroup{}
+	for index, listener := range listeners {
+		address := addresses[index]
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			first := listener
+			Serve(ctx, func(ctx context.Context) (net.Listener, error) {
+				if first != nil {
+					opened := first
+					first = nil
+					return opened, nil
+				}
+				return listen(ctx, address)
+			}, func(ctx context.Context, listener net.Listener) error {
+				return serve(ctx, address, listener)
+			}, func(event Event) {
+				if event.Err != nil {
+					b.logger.Error("Relisten", "err", event.Err, "attempt", event.Attempt, "backoff", event.Backoff)
+				} else {
+					b.logger.Info("Listen", "address", event.Addr)
+				}
+			})
+		}()
 	}
 	wg.Wait()
 	return nil
