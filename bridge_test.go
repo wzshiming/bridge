@@ -33,9 +33,57 @@ import (
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/permuteproxy"
 
+	bridgepkg "github.com/wzshiming/bridge"
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/logger"
 )
+
+func TestClientAddr(t *testing.T) {
+	type parentKey struct{}
+	parent, cancel := context.WithTimeout(context.WithValue(context.Background(), parentKey{}, "parent"), time.Minute)
+	defer cancel()
+	if got := bridgepkg.ClientAddr(parent); got != "" {
+		t.Fatalf("absent address = %q, want empty", got)
+	}
+	addr := &net.TCPAddr{IP: net.ParseIP("192.0.2.1"), Port: 1234}
+	want := addr.String()
+	child := bridgepkg.WithClientAddr(parent, addr)
+	addr.Port++
+	if got := bridgepkg.ClientAddr(child); got != want {
+		t.Errorf("stored address = %q, want snapshot %q", got, want)
+	}
+	masked := bridgepkg.WithClientAddr(child, nil)
+	if got := bridgepkg.ClientAddr(masked); got != "" {
+		t.Errorf("nil address = %q, want empty", got)
+	}
+	if got := bridgepkg.ClientAddr(child); got != want {
+		t.Errorf("parent address changed to %q, want %q", got, want)
+	}
+	if got := bridgepkg.ClientAddr(parent); got != "" {
+		t.Errorf("address leaked to parent: %q", got)
+	}
+	for _, derived := range []context.Context{child, masked} {
+		if got := derived.Value(parentKey{}); got != "parent" {
+			t.Errorf("parent value = %v, want parent", got)
+		}
+		deadline, ok := derived.Deadline()
+		wantDeadline, _ := parent.Deadline()
+		if !ok || !deadline.Equal(wantDeadline) {
+			t.Errorf("deadline = %v, %v, want %v", deadline, ok, wantDeadline)
+		}
+	}
+	cancel()
+	for _, derived := range []context.Context{child, masked} {
+		select {
+		case <-derived.Done():
+		default:
+			t.Error("parent cancellation did not propagate")
+		}
+		if derived.Err() != context.Canceled {
+			t.Errorf("context error = %v, want canceled", derived.Err())
+		}
+	}
+}
 
 var ctx = context.Background()
 

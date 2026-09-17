@@ -142,7 +142,8 @@ func (b *Bridge) bridgeStream(ctx context.Context, listenConfig bridge.ListenCon
 			if idleTimeout != 0 {
 				raw = idle.NewIdleConn(raw, idleTimeout)
 			}
-			go b.stepIgnoreErr(ctx, dialer, raw, dials)
+			clientCtx := bridge.WithClientAddr(ctx, raw.RemoteAddr())
+			go b.stepIgnoreErr(clientCtx, dialer, raw, dials)
 		}
 		return ctx.Err()
 	})

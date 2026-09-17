@@ -82,6 +82,78 @@ func runtimeAddresses(proxy bool) []string {
 	return []string{"tcp://127.0.0.1:10001", "tcp://127.0.0.1:10002"}
 }
 
+func TestBridgeStreamClientAddr(t *testing.T) {
+	type parentKey struct{}
+	parent := bridge.WithClientAddr(context.WithValue(context.Background(), parentKey{}, "parent"), &net.TCPAddr{IP: net.ParseIP("192.0.2.1"), Port: 1234})
+	ctx, cancel := context.WithTimeout(parent, 5*time.Second)
+	defer cancel()
+	listener := newRuntimeListener(t)
+	contexts := make(chan context.Context, 2)
+	dialDone := make(chan struct{}, 2)
+	dialer := bridge.DialFunc(func(callCtx context.Context, network, address string) (net.Conn, error) {
+		contexts <- callCtx
+		<-callCtx.Done()
+		dialDone <- struct{}{}
+		return nil, io.EOF
+	})
+	listen := bridge.ListenConfigFunc(func(callCtx context.Context, network, address string) (net.Listener, error) {
+		if callCtx != ctx {
+			t.Error("listener did not receive parent context")
+		}
+		return listener, nil
+	})
+	runtime := NewBridge(slog.New(slog.NewTextHandler(io.Discard, nil)), false)
+	done := make(chan error, 1)
+	go func() {
+		done <- runtime.bridgeStream(ctx, listen, dialer, 0, runtimeAddresses(false)[:1], []string{"tcp://upstream:1234"}, nil)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case err := <-done:
+			if err != nil {
+				t.Errorf("stream runtime = %v", err)
+			}
+		case <-time.After(time.Second):
+			t.Error("stream runtime did not stop")
+		}
+	})
+	var received []context.Context
+	var addresses []string
+	for index := 0; index < 2; index++ {
+		client, err := (&net.Dialer{}).DialContext(ctx, "tcp", listener.Addr().String())
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { client.Close() })
+		addresses = append(addresses, client.LocalAddr().String())
+		select {
+		case callCtx := <-contexts:
+			received = append(received, callCtx)
+		case <-time.After(time.Second):
+			t.Fatal("accepted stream did not reach dialer")
+		}
+	}
+	if addresses[0] == addresses[1] {
+		t.Fatal("clients must have distinct socket addresses")
+	}
+	for index, callCtx := range received {
+		if got := bridge.ClientAddr(callCtx); got != addresses[index] {
+			t.Errorf("client %d address = %q, want accepted remote %q", index, got, addresses[index])
+		}
+		if got := callCtx.Value(parentKey{}); got != "parent" {
+			t.Errorf("client %d parent value = %v, want parent", index, got)
+		}
+	}
+	if got := bridge.ClientAddr(ctx); got != "192.0.2.1:1234" {
+		t.Errorf("parent address changed to %q", got)
+	}
+	cancel()
+	for range received {
+		waitRuntime(t, dialDone)
+	}
+}
+
 func TestBridgeInitialListenFailure(t *testing.T) {
 	for _, proxy := range []bool{false, true} {
 		for _, partial := range []bool{false, true} {
