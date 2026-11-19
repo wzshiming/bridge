@@ -2,6 +2,8 @@ package local
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net"
 	"os"
 	"strings"
@@ -32,6 +34,19 @@ func (l *Local) DialContext(ctx context.Context, network, address string) (net.C
 func (l *Local) Listen(ctx context.Context, network, address string) (net.Listener, error) {
 	logger.Std.Debug("Listen", "network", network, "address", address)
 	return l.ListenConfig.Listen(ctx, network, address)
+}
+
+func (l *Local) ListenPacket(ctx context.Context, network, address string) (net.PacketConn, error) {
+	logger.Std.Debug("ListenPacket", "network", network, "address", address)
+	return listenPacket(ctx, l.ListenConfig, network, address)
+}
+
+func listenPacket(ctx context.Context, listenConfig bridge.ListenConfig, network, address string) (net.PacketConn, error) {
+	l, ok := listenConfig.(bridge.ListenPacketConfig)
+	if !ok {
+		return nil, fmt.Errorf("%T could not listen packet: %w", listenConfig, errors.ErrUnsupported)
+	}
+	return l.ListenPacket(ctx, network, address)
 }
 
 func (l *Local) CommandDialContext(ctx context.Context, name string, args ...string) (net.Conn, error) {

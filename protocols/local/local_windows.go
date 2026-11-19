@@ -29,6 +29,10 @@ func (p *pipeListenConfig) Listen(ctx context.Context, network, address string) 
 	return winio.ListenPipe(address, &conf)
 }
 
+func (p *pipeListenConfig) ListenPacket(ctx context.Context, network, address string) (net.PacketConn, error) {
+	return listenPacket(ctx, p.ListenConfig, network, address)
+}
+
 type pipeDialer struct {
 	bridge.Dialer
 }
