@@ -18,6 +18,19 @@ func (l ListenConfigFunc) Listen(ctx context.Context, network, address string) (
 	return l(ctx, network, address)
 }
 
+// ListenPacketConfig contains options for listening to a packet address.
+type ListenPacketConfig interface {
+	ListenPacket(ctx context.Context, network, address string) (net.PacketConn, error)
+}
+
+// ListenPacketConfigFunc type is an adapter for ListenPacketConfig.
+type ListenPacketConfigFunc func(ctx context.Context, network, address string) (net.PacketConn, error)
+
+// ListenPacket calls l(ctx, network, address)
+func (l ListenPacketConfigFunc) ListenPacket(ctx context.Context, network, address string) (net.PacketConn, error) {
+	return l(ctx, network, address)
+}
+
 // Dialer contains options for connecting to an address.
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)

@@ -15,6 +15,9 @@ func SOCKS5(ctx context.Context, dialer bridge.Dialer, addr string) (bridge.Dial
 	}
 	if dialer != nil {
 		d.ProxyDial = dialer.DialContext
+		if p, ok := dialer.(bridge.ListenPacketConfig); ok {
+			d.ProxyPacketDial = p.ListenPacket
+		}
 	}
 	return d, nil
 }
