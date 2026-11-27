@@ -11,23 +11,14 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/wzshiming/bridge/protocols/command"
-	_ "github.com/wzshiming/bridge/protocols/connect"
-	_ "github.com/wzshiming/bridge/protocols/netcat"
-	_ "github.com/wzshiming/bridge/protocols/permuteproxy"
-	_ "github.com/wzshiming/bridge/protocols/shadowsocks"
-	_ "github.com/wzshiming/bridge/protocols/snappy"
-	_ "github.com/wzshiming/bridge/protocols/socks4"
-	_ "github.com/wzshiming/bridge/protocols/socks5"
-	_ "github.com/wzshiming/bridge/protocols/ssh"
-	_ "github.com/wzshiming/bridge/protocols/tls"
-
 	_ "github.com/wzshiming/anyproxy/pprof"
 	_ "github.com/wzshiming/anyproxy/proxies/httpproxy"
 	_ "github.com/wzshiming/anyproxy/proxies/shadowsocks"
 	_ "github.com/wzshiming/anyproxy/proxies/socks4"
 	_ "github.com/wzshiming/anyproxy/proxies/socks5"
 	_ "github.com/wzshiming/anyproxy/proxies/sshproxy"
+
+	_ "github.com/wzshiming/permuteproxy/protocols/all"
 
 	flag "github.com/spf13/pflag"
 	"github.com/wzshiming/bridge/chain"

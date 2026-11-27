@@ -15,17 +15,14 @@ import (
 	"github.com/wzshiming/bridge/logger"
 )
 
-// BridgeChain is a bridger that supports multiple crossing of bridger.
+// BridgeChain crosses multiple hops, each one a permuteproxy URI.
 type BridgeChain struct {
-	DialerFunc   func(dialer bridge.Dialer) bridge.Dialer
-	proto        map[string]bridge.Bridger
-	defaultProto bridge.Bridger
+	DialerFunc func(dialer bridge.Dialer) bridge.Dialer
 }
 
 // NewBridgeChain create a new BridgeChain.
 func NewBridgeChain() *BridgeChain {
 	return &BridgeChain{
-		proto:      map[string]bridge.Bridger{},
 		DialerFunc: NewEnvDialer,
 	}
 }
@@ -75,33 +72,7 @@ func (b *BridgeChain) bridgeChainWithConfig(ctx context.Context, dialer bridge.D
 }
 
 func (b *BridgeChain) multiDial(dialer bridge.Dialer, addresses []string) bridge.Dialer {
-	return newBackoffManager(dialer, b.singleDial, addresses)
-}
-
-func (b *BridgeChain) singleDial(ctx context.Context, dialer bridge.Dialer, address string) (bridge.Dialer, error) {
-	sch, _, ok := scheme.SplitSchemeAddr(address)
-	if !ok {
-		return nil, fmt.Errorf("unsupported protocol format %q", address)
-	}
-	bridger, ok := b.proto[sch]
-	if !ok {
-		if b.defaultProto == nil {
-			return nil, fmt.Errorf("unsupported protocol %q", sch)
-		}
-		bridger = b.defaultProto
-	}
-	return bridger.Bridge(ctx, dialer, address)
-}
-
-// Register is register a new bridger for BridgeChain.
-func (b *BridgeChain) Register(name string, bridger bridge.Bridger) error {
-	b.proto[name] = bridger
-	return nil
-}
-
-// RegisterDefault is register a default bridger for BridgeChain.
-func (b *BridgeChain) RegisterDefault(bridger bridge.Bridger) {
-	b.defaultProto = bridger
+	return newBackoffManager(dialer, permuteProxy, addresses)
 }
 
 type backoffManager struct {

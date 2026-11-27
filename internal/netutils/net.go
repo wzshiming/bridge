@@ -3,7 +3,6 @@ package netutils
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -12,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/commandproxy"
 )
 
 var ErrServerClosed = errors.New("server closed")
@@ -82,37 +80,23 @@ func IsAcceptTimeoutError(err error) bool {
 	return false
 }
 
+// Dial dials through dialer, beside the networks it knows the virtual one and cmd under its longer name.
 func Dial(ctx context.Context, dialer bridge.Dialer, network, address string) (net.Conn, error) {
-	if network == "cmd" || network == "command" {
-		d, ok := dialer.(bridge.CommandDialer)
-		if !ok {
-			return nil, fmt.Errorf("protocol %q unsupported cmd %q", network, address)
-		}
-		cmd, err := commandproxy.SplitCommand(address)
-		if err != nil {
-			return nil, err
-		}
-		return d.CommandDialContext(ctx, cmd[0], cmd[1:]...)
-	}
-	if network == "virtual" {
+	switch network {
+	case "command":
+		network = "cmd"
+	case "virtual":
 		return virtualNetwork.DialContext(ctx, "tcp", address)
 	}
 	return dialer.DialContext(ctx, network, address)
 }
 
+// Listen listens through listener as Dial dials.
 func Listen(ctx context.Context, listener bridge.ListenConfig, network, address string) (net.Listener, error) {
-	if network == "cmd" || network == "command" {
-		l, ok := listener.(bridge.CommandListenConfig)
-		if !ok {
-			return nil, fmt.Errorf("protocol %q unsupported cmd %q", network, address)
-		}
-		cmd, err := commandproxy.SplitCommand(address)
-		if err != nil {
-			return nil, err
-		}
-		return l.CommandListen(ctx, cmd[0], cmd[1:]...)
-	}
-	if network == "virtual" {
+	switch network {
+	case "command":
+		network = "cmd"
+	case "virtual":
 		return virtualNetwork.Listen(ctx, "tcp", address)
 	}
 	return listener.Listen(ctx, network, address)

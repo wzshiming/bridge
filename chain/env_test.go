@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/hostmatcher"
+	"github.com/wzshiming/permuteproxy"
 )
 
 type envCall struct {
@@ -28,8 +28,8 @@ func envMatcher(host string) hostmatcher.Matcher {
 }
 
 func TestNewEnvDialer(t *testing.T) {
-	noProxy, onlyProxy, localDialer := NoProxy, OnlyProxy, local.LOCAL.Dialer
-	t.Cleanup(func() { NoProxy, OnlyProxy, local.LOCAL.Dialer = noProxy, onlyProxy, localDialer })
+	noProxy, onlyProxy, localNetwork := NoProxy, OnlyProxy, Local
+	t.Cleanup(func() { NoProxy, OnlyProxy, Local = noProxy, onlyProxy, localNetwork })
 
 	tests := []struct {
 		name      string
@@ -54,10 +54,10 @@ func TestNewEnvDialer(t *testing.T) {
 			ctx := context.WithValue(context.Background(), envCtxKey{}, tt.name)
 			errFake := errors.New("fake")
 			var got []envCall
-			local.LOCAL.Dialer = bridge.DialFunc(func(ctx context.Context, network, address string) (net.Conn, error) {
+			Local = permuteproxy.NetworkFuncs{DialContextFunc: func(ctx context.Context, network, address string) (net.Conn, error) {
 				got = append(got, envCall{"local dial", ctx, network, address})
 				return nil, errFake
-			})
+			}}
 			origin := struct {
 				bridge.Dialer
 				bridge.ListenConfig

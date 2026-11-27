@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/wzshiming/bridge"
-	"github.com/wzshiming/bridge/protocols/local"
 	"github.com/wzshiming/hostmatcher"
 )
 
@@ -46,10 +45,10 @@ func NewEnvDialer(dialer bridge.Dialer) bridge.Dialer {
 	}
 	l, ok := dialer.(bridge.ListenConfig)
 	if OnlyProxy != nil {
-		dialer = NewShuntDialer(local.LOCAL, dialer, OnlyProxy)
+		dialer = NewShuntDialer(Local, dialer, OnlyProxy)
 	}
 	if NoProxy != nil {
-		dialer = NewShuntDialer(dialer, local.LOCAL, NoProxy)
+		dialer = NewShuntDialer(dialer, Local, NoProxy)
 	}
 	if ok {
 		return struct {
