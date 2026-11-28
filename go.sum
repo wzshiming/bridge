@@ -24,8 +24,8 @@ github.com/wzshiming/httpproxy v0.7.0 h1:cFg4hRjLRtWGgH+N4Wdb89fzDb3PHDEzNMZhh9m
 github.com/wzshiming/httpproxy v0.7.0/go.mod h1:/LOkMarTCHbkw8FgbzTXRTFnxRnOCFOD1YJP0GHJ4eo=
 github.com/wzshiming/notify v0.1.1 h1:rJXoszrkNglhCVyn/IfW500f5cW03q1q7YzL8hsLchI=
 github.com/wzshiming/notify v0.1.1/go.mod h1:SFhsQKZJznzsDcj/Qfo9A65k5IRcpUrpgbLRzZEa/DI=
-github.com/wzshiming/permuteproxy v0.0.5-0.20261127185726-71bc8d483e1c h1:MNYstdTXTtCl1qQBao5uB0qL/FQt7SrQe0HhS+2kHdI=
-github.com/wzshiming/permuteproxy v0.0.5-0.20261127185726-71bc8d483e1c/go.mod h1:bu++9vSwtAfRLcMhQUh9Re9YbkMyJi++JhfWyP53zqs=
+github.com/wzshiming/permuteproxy v0.0.5-0.20261128062804-aba12d357866 h1:6fgXoF/Cuup0kwXQGGal+FHiN0VE6ioIKbBWEABqXL8=
+github.com/wzshiming/permuteproxy v0.0.5-0.20261128062804-aba12d357866/go.mod h1:bu++9vSwtAfRLcMhQUh9Re9YbkMyJi++JhfWyP53zqs=
 github.com/wzshiming/shadowsocks v0.6.0 h1:1vZiqhrb0CWbOoplXcgIbYw4mq3u6+oPPQssF1uEO4k=
 github.com/wzshiming/shadowsocks v0.6.0/go.mod h1:BLd8T7D1UnCIUwTOgojLXRX+LZMornyw7Yx4ZY8AtJA=
 github.com/wzshiming/socks4 v0.6.0 h1:01HOEl33/w27HRcj0OQdU+W3YkzfSTim64vhZ15+gY4=

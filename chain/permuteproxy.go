@@ -10,6 +10,9 @@ import (
 	"github.com/wzshiming/bridge"
 )
 
+// Local is the network of this machine, what a chain's first hop is crossed over: each network permuteproxy has registered, by its name.
+var Local = permuteproxy.DefaultNetwork
+
 // permuteProxy crosses one hop over dialer. The hop is a permuteproxy URI that is a client:
 //
 //	socks5://[username:password@]{address}  a proxy, optionally over layers as in socks5+tls://

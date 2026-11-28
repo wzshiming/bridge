@@ -7,7 +7,7 @@ require (
 	github.com/wzshiming/anyproxy v0.10.0
 	github.com/wzshiming/hostmatcher v0.0.3
 	github.com/wzshiming/notify v0.1.1
-	github.com/wzshiming/permuteproxy v0.0.5-0.20261127185726-71bc8d483e1c
+	github.com/wzshiming/permuteproxy v0.0.5-0.20261128062804-aba12d357866
 )
 
 require (
