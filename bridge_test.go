@@ -13,17 +13,6 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/wzshiming/bridge/protocols/command"
-	_ "github.com/wzshiming/bridge/protocols/connect"
-	_ "github.com/wzshiming/bridge/protocols/netcat"
-	_ "github.com/wzshiming/bridge/protocols/permuteproxy"
-	_ "github.com/wzshiming/bridge/protocols/shadowsocks"
-	_ "github.com/wzshiming/bridge/protocols/snappy"
-	_ "github.com/wzshiming/bridge/protocols/socks4"
-	_ "github.com/wzshiming/bridge/protocols/socks5"
-	_ "github.com/wzshiming/bridge/protocols/ssh"
-	_ "github.com/wzshiming/bridge/protocols/tls"
-
 	_ "github.com/wzshiming/anyproxy/proxies/httpproxy"
 	_ "github.com/wzshiming/anyproxy/proxies/shadowsocks"
 	_ "github.com/wzshiming/anyproxy/proxies/socks4"
@@ -32,6 +21,7 @@ import (
 
 	"github.com/wzshiming/anyproxy"
 	"github.com/wzshiming/permuteproxy"
+	_ "github.com/wzshiming/permuteproxy/protocols/all"
 
 	"github.com/wzshiming/bridge/chain"
 	"github.com/wzshiming/bridge/logger"
@@ -58,10 +48,11 @@ func newProxy(addr string) (uri string, err error) {
 		return "", err
 	}
 	if strings.Contains(u.Scheme, "+") {
-		l := &permuteproxy.Proxy{
-			ListenConfig: &net.ListenConfig{},
+		c, err := permuteproxy.ParseURI(addr)
+		if err != nil {
+			return "", err
 		}
-		dc, err := l.NewRunner(addr)
+		dc, err := permuteproxy.ServerEngine{}.Server(c)
 		if err != nil {
 			return "", err
 		}

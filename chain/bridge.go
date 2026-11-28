@@ -22,8 +22,6 @@ import (
 	"github.com/wzshiming/bridge/internal/pool"
 	"github.com/wzshiming/bridge/internal/scheme"
 	"github.com/wzshiming/bridge/logger"
-	"github.com/wzshiming/bridge/protocols/local"
-	"github.com/wzshiming/commandproxy"
 	"github.com/wzshiming/hostmatcher"
 )
 
@@ -43,14 +41,14 @@ func NewBridge(logger *slog.Logger, dump bool) *Bridge {
 
 func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) error {
 	var (
-		dialer       bridge.Dialer       = local.LOCAL
-		listenConfig bridge.ListenConfig = local.LOCAL
+		dialer       bridge.Dialer       = Local
+		listenConfig bridge.ListenConfig = Local
 	)
 	dial := config.Proxy[0]
 	dials := config.Proxy[1:]
 
 	if len(dials) != 0 {
-		d, err := b.chain.BridgeChainWithConfig(ctx, local.LOCAL, dials...)
+		d, err := b.chain.BridgeChainWithConfig(ctx, Local, dials...)
 		if err != nil {
 			return err
 		}
@@ -83,7 +81,7 @@ func (b *Bridge) BridgeWithConfig(ctx context.Context, config config.Chain) erro
 	listens := config.Bind[1:]
 
 	if len(listens) != 0 {
-		d, err := b.chain.BridgeChainWithConfig(ctx, local.LOCAL, listens...)
+		d, err := b.chain.BridgeChainWithConfig(ctx, Local, listens...)
 		if err != nil {
 			return err
 		}
@@ -343,7 +341,24 @@ func step(ctx context.Context, dialer bridge.Dialer, raw io.ReadWriteCloser, dia
 		pool.Bytes.Put(buf1)
 		pool.Bytes.Put(buf2)
 	}()
-	return commandproxy.Tunnel(context.Background(), conn, raw, buf1, buf2)
+	return tunnel(conn, raw, buf1, buf2)
+}
+
+// tunnel copies both ways between c1 and c2 until one way ends, then closes both.
+func tunnel(c1, c2 io.ReadWriteCloser, buf1, buf2 []byte) error {
+	errCh := make(chan error, 2)
+	go func() {
+		_, err := io.CopyBuffer(c1, c2, buf1)
+		errCh <- err
+	}()
+	go func() {
+		_, err := io.CopyBuffer(c2, c1, buf2)
+		errCh <- err
+	}()
+	err := <-errCh
+	c1.Close()
+	c2.Close()
+	return err
 }
 
 func ShowChainWithConfig(config config.Chain) string {
